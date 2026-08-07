@@ -1,89 +1,101 @@
-CẬP NHẬT TAB ĐƠN HÀNG - NHẬP TRỰC TIẾP TRÊN WEB
+ĐỔI LOGIC LÔ SẢN XUẤT SAU LSX
 
-Bản này chỉ sửa phần Đơn hàng đã thống nhất.
-Không thay module khác.
+FLOW MỚI:
 
-FILE CẦN COPY ĐÈ:
-1. app/orders/page.tsx
-2. app/api/orders/route.ts
+Đơn hàng
+-> Tạo LSX
+-> Lập Lô sản xuất
+-> Release Lô
+-> Dispatch
 
-FILE SQL MỚI:
-3. supabase/002_web_order_demo.sql
+=================================================
+THAY ĐỔI CHÍNH
+=================================================
 
+1. Tạo LSX:
+- KHÔNG còn yêu cầu đơn phải thuộc Lô RELEASED.
+- Có thể tạo LSX trực tiếp từ Đơn hàng.
 
-BƯỚC 1 - CHẠY SQL
+2. Lô sản xuất:
+- KHÔNG còn chọn Đơn hàng.
+- Chỉ chọn LSX Cha đã được tạo.
+- Một LSX Cha chỉ được thuộc một Lô tại một thời điểm.
 
-Vào Supabase:
-SQL Editor -> New query
+3. Lô vẫn theo dõi:
+- Tổng SL
+- Cánh Ready
+- Khung Ready
+- Phào Ready
+- Đủ Bộ Ready
 
-Mở file:
-supabase/002_web_order_demo.sql
+Đủ Bộ Ready từng LSX:
+MIN(Cánh Ready, Khung Ready, Phào Ready)
 
-Copy toàn bộ -> Run.
+4. Dispatch:
+Không thay đổi.
+Vẫn:
+Eligible + WIP + Capacity + Priority.
 
-SQL chỉ bổ sung:
-- so_luong
-- trang_thai
+=================================================
+MIGRATION
+=================================================
 
-Không xóa dữ liệu/cột cũ.
+BẮT BUỘC chạy:
 
+supabase/migrations/202608080015_lot_after_lsx.sql
 
-BƯỚC 2 - COPY CODE
+Migration:
+- thêm production_order_id vào production_lot_items
+- liên kết trực tiếp tới LSX Cha
+- backfill Lô cũ nếu đã có LSX
+- unique 1 LSX Cha / 1 Lô
 
-Copy:
-app/orders/page.tsx
-app/api/orders/route.ts
+=================================================
+TEST
+=================================================
 
-vào đúng project cua-thep-demo hiện tại.
+1. /orders
+Có 200 đơn.
 
+2. /production-orders
+Chọn đơn bất kỳ.
+Tạo LSX ngay, KHÔNG cần Lô.
 
-BƯỚC 3 - CHẠY LOCAL
+3. /production-lots
+LSX vừa tạo phải xuất hiện ở:
+"LSX chưa vào lô"
 
-npm run dev
+4. Chọn nhiều LSX.
+Tạo Lô.
 
-Mở:
-http://localhost:3000/orders
+5. Release Lô.
 
+6. Kiểm tra:
+Lô hiển thị LSX + Đơn hàng + Ready Cánh/Khung/Phào/Đủ Bộ.
 
-CHỨC NĂNG HIỆN TẠI
+=================================================
+FILE THAY ĐỔI
+=================================================
 
-- Nhập đơn trực tiếp bằng form web.
-- Lưu vào Supabase.
-- Sửa đơn.
-- Xóa đơn.
-- Tìm kiếm.
-- Lọc trạng thái.
-- Đưa đơn từ "Mới" -> "Đã lên kế hoạch".
-- Thẻ tổng hợp: tổng đơn, tổng SL, đã lên kế hoạch, đang sản xuất.
+app/api/production-orders/route.ts
+app/production-orders/page.tsx
+app/api/production-lots/route.ts
+app/production-lots/page.tsx
+app/erp-logic/page.tsx
+supabase/migrations/202608080015_lot_after_lsx.sql
 
+=================================================
+CMD
+=================================================
 
-TRƯỜNG DEMO
+cd /d D:\Projects\cua-thep-demo
 
-- Đơn hàng
-- Đại lý
-- Ngày đặt
-- Ngày giao
-- Model
-- Màu
-- Cao
-- Rộng
-- Hướng mở
-- Số lượng
-- Khóa
-- Trạng thái
-- Ghi chú
-
-
-BƯỚC 4 - KIỂM TRA BUILD
-
-Ctrl + C
 npm run build
 
+Nếu build OK:
 
-BƯỚC 5 - GITHUB / VERCEL
+git add app/api/production-orders/route.ts app/production-orders/page.tsx app/api/production-lots/route.ts app/production-lots/page.tsx app/erp-logic/page.tsx supabase/migrations/202608080015_lot_after_lsx.sql
 
-git add .
-git commit -m "Simplify steel door web order entry"
+git commit -m "Move production lot planning after LSX"
+
 git push
-
-Vercel sẽ tự deploy nếu project đã kết nối GitHub.

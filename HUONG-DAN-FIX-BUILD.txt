@@ -1,0 +1,22 @@
+FIX BUILD WIP
+
+Lỗi:
+Cannot find name 'wipNumberClass'
+
+Chỉ sửa:
+app/configuration/page.tsx
+
+Áp dụng:
+Copy đè file này vào project.
+
+CMD:
+cd /d D:\Projects\cua-thep-demo
+npm run build
+
+Nếu build OK:
+git add app/configuration/page.tsx
+git commit -m "Fix WIP configuration build"
+git push
+
+Không có migration Supabase mới.
+Không cần db push.

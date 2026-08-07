@@ -114,8 +114,9 @@ export default function ErpLogicPage() {
           </h1>
           <p className="mt-1 max-w-5xl text-sm text-slate-500">
             Màn hình mô tả toàn bộ cách hệ thống vận hành từ lúc nhận đơn hàng
-            đến lúc hoàn thành sản xuất. Dùng để demo cho khách và thống nhất
-            quy trình trước khi phát triển sâu hơn.
+            đến lúc hoàn thành sản xuất. Bản demo bổ sung Wizard lập kế hoạch,
+            cảnh báo ngoại lệ, kế hoạch 7 ngày, timeline đơn hàng và màn hình xưởng
+            để minh họa vòng điều hành khép kín.
           </p>
         </div>
 

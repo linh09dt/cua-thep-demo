@@ -1,0 +1,204 @@
+NÂNG CẤP DEMO KHÁCH HÀNG - ERP CỬA THÉP
+
+Bản này chỉ gồm các file thay đổi.
+KHÔNG có migration Supabase mới.
+
+=================================================
+1. WIZARD LẬP KẾ HOẠCH
+=================================================
+
+Đường dẫn:
+/planning-wizard
+
+Flow:
+Đơn hàng
+-> Lệnh sản xuất
+-> Lô sản xuất
+-> Cảnh báo kế hoạch
+-> Điều độ
+-> Màn hình xưởng
+-> Theo dõi kết quả
+
+API:
+/api/planning-wizard
+
+=================================================
+2. CẢNH BÁO KẾ HOẠCH
+=================================================
+
+Đường dẫn:
+/planning-alerts
+
+ERP tự phát hiện:
+- đơn trễ hạn
+- đơn còn <= 2 ngày đến hạn
+- WO vượt Capacity
+- Lô mất cân bằng Cánh / Khung / Phào
+
+Dashboard cũng hiển thị 3 cảnh báo nổi bật.
+
+API:
+/api/planning-alerts
+
+=================================================
+3. KẾ HOẠCH 7 NGÀY
+=================================================
+
+Đường dẫn:
+/weekly-plan
+
+Hiển thị ma trận:
+WO x 7 ngày
+
+Mỗi ô:
+Planned / Capacity
+Mức tải %
+
+Màu:
+Xanh: <80%
+Vàng: 80-100%
+Đỏ: >100%
+
+API:
+/api/weekly-plan
+
+=================================================
+4. TIMELINE ĐƠN HÀNG
+=================================================
+
+Đã cập nhật:
+/order-tracking
+
+Khi bấm Xem:
+Đơn hàng
+-> LSX
+-> Lô
+-> Cánh
+-> Khung
+-> Phào
+-> Đủ Bộ
+-> Công đoạn chung
+-> Hoàn thành
+
+Hiển thị thêm:
+- Lô sản xuất
+- trạng thái Lô
+
+=================================================
+5. MÀN HÌNH XƯỞNG
+=================================================
+
+Đường dẫn:
+/shop-floor
+
+Cho tổ sản xuất:
+- chọn ngày
+- chọn WO
+- xem Dispatch RELEASED
+- xem kế hoạch / Good / Remain
+- nhập Good hôm nay
+- nhập NG hôm nay
+- Lưu báo cáo
+
+Dùng trực tiếp API báo cáo sản xuất hiện có.
+Không tạo logic báo cáo mới.
+
+=================================================
+6. KỊCH BẢN DEMO KHÁCH HÀNG
+=================================================
+
+Đường dẫn:
+/demo-scenario
+
+Có 7 bước trình bày:
+Dashboard
+-> LSX
+-> Lô
+-> Cảnh báo
+-> Điều độ
+-> Xưởng
+-> Timeline đơn
+
+Kịch bản này chỉ hướng dẫn trình bày.
+Không tự sửa trạng thái nghiệp vụ.
+
+=================================================
+7. MENU
+=================================================
+
+TỔNG QUAN:
+- Dashboard điều hành
+- Lập kế hoạch (Wizard)
+- Cảnh báo kế hoạch
+- Kế hoạch 7 ngày
+
+TRỢ GIÚP:
+- Logic vận hành ERP
+- Kịch bản demo
+
+THỰC THI VÀ BÁO CÁO:
+- Màn hình xưởng
+- Báo cáo sản xuất
+
+KẾ HOẠCH SẢN XUẤT vẫn giữ:
+- Lệnh sản xuất
+- Lô sản xuất
+- Điều độ sản xuất
+
+=================================================
+SUPABASE
+=================================================
+
+KHÔNG có migration mới.
+
+Các chức năng dùng các bảng hiện có:
+- steel_door_orders
+- production_orders
+- production_lots
+- production_lot_items
+- production_operations
+- production_capacities
+- production_dispatch_headers
+- production_dispatch_items
+- production_reports
+
+=================================================
+KIỂM TRA ĐÃ LÀM
+=================================================
+
+Đã chạy kiểm tra cú pháp TypeScript/TSX bằng TypeScript transpiler:
+SYNTAX_CHECK_OK
+
+Môi trường đóng gói không có node_modules nên không chạy Next.js full build tại đây.
+
+=================================================
+CMD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm install
+npm run build
+
+Nếu build OK:
+
+git add app/page.tsx app/api/planning-alerts app/planning-alerts app/api/weekly-plan app/weekly-plan app/api/planning-wizard app/planning-wizard app/shop-floor app/api/order-tracking/route.ts app/order-tracking/page.tsx app/demo-scenario components/app-shell.tsx app/erp-logic/page.tsx
+
+git commit -m "Add customer demo planning and shop floor features"
+
+git push
+
+=================================================
+TEST DEMO
+=================================================
+
+1. /
+2. /planning-wizard
+3. /production-orders
+4. /production-lots
+5. /planning-alerts
+6. /weekly-plan
+7. /dispatch
+8. /shop-floor
+9. /order-tracking
+10. /demo-scenario

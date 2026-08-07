@@ -1,0 +1,72 @@
+MOBILE VIEW - ERP CỬA THÉP
+
+CHỈ 2 FILE THAY ĐỔI:
+components/app-shell.tsx
+app/globals.css
+
+=================================================
+MOBILE VIEW
+=================================================
+
+<= 1100px
+- Sidebar chuyển thành drawer/menu trượt.
+- Nút ☰ mở sidebar.
+- Có overlay để đóng menu.
+- Main content full width.
+- Table kéo ngang.
+
+<= 720px
+- Topbar thu gọn.
+- Ẩn breadcrumb / trạng thái / ngày để tiết kiệm chỗ.
+- Hiện tên module ngắn.
+- Form chuyển về 1 cột.
+- Input tối thiểu 42px.
+- Font input 16px để tránh iPhone tự zoom.
+- Bảng kéo ngang.
+- Modal fit màn hình.
+- Dashboard card/chart xuống hàng.
+
+<= 430px
+- Card về 1 cột.
+- Sidebar item cao hơn để dễ bấm.
+- Khoảng cách nhỏ hơn.
+
+=================================================
+KHÔNG THAY ĐỔI
+=================================================
+
+Không đổi:
+- Database
+- API
+- Routing
+- WIP
+- Capacity
+- Priority
+- Dispatch
+- Report
+
+Không có migration Supabase.
+
+=================================================
+CMD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm run dev
+
+Test:
+1. Chrome -> F12
+2. Toggle device toolbar
+3. Chọn iPhone / Galaxy / iPad
+4. Kiểm tra menu ☰
+5. Kiểm tra Dashboard
+6. Kiểm tra Điều độ/Báo cáo kéo ngang bảng
+
+BUILD:
+npm run build
+
+GIT:
+git add components/app-shell.tsx app/globals.css
+git commit -m "Add ERP mobile responsive view"
+git push

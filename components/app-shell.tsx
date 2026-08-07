@@ -22,6 +22,9 @@ const menuGroups: MenuGroup[] = [
     theme: "overview",
     items: [
       { href: "/", label: "Dashboard điều hành", short: "DB" },
+      { href: "/planning-wizard", label: "Lập kế hoạch (Wizard)", short: "WZ" },
+      { href: "/planning-alerts", label: "Cảnh báo kế hoạch", short: "CB" },
+      { href: "/weekly-plan", label: "Kế hoạch 7 ngày", short: "7D" },
     ],
   },
   {
@@ -29,6 +32,7 @@ const menuGroups: MenuGroup[] = [
     theme: "help",
     items: [
       { href: "/erp-logic", label: "Logic vận hành ERP", short: "LG" },
+      { href: "/demo-scenario", label: "Kịch bản demo", short: "DM" },
     ],
   },
   {
@@ -52,6 +56,7 @@ const menuGroups: MenuGroup[] = [
     title: "THỰC THI VÀ BÁO CÁO",
     theme: "report",
     items: [
+      { href: "/shop-floor", label: "Màn hình xưởng", short: "SX" },
       { href: "/production-report", label: "Báo cáo sản xuất", short: "BC" },
     ],
   },

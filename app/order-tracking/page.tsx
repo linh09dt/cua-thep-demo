@@ -29,6 +29,12 @@ type TrackingRow = {
   systemStatus: string;
   note: string;
 
+  lotNo: string;
+  lotName: string;
+  lotStatus: string;
+  lotProductionDate: string;
+  lotTargetDeliveryDate: string;
+
   rootId: string | null;
   productionNo: string;
   rootStatus: string;
@@ -608,6 +614,19 @@ function DetailModal({
             </div>
           </div>
 
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Info
+              label="Lô sản xuất"
+              value={row.lotNo || "Chưa vào lô"}
+            />
+            <Info
+              label="Trạng thái Lô"
+              value={row.lotStatus || "-"}
+            />
+          </div>
+
+          <OrderTimeline row={row} />
+
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             <ComponentCard
               title="Cánh"
@@ -654,6 +673,140 @@ function DetailModal({
       </div>
     </div>
   );
+}
+
+function OrderTimeline({
+  row,
+}: {
+  row: TrackingRow;
+}) {
+  const steps = [
+    {
+      title: "Đơn hàng",
+      detail: row.orderNo,
+      status: "DONE",
+    },
+    {
+      title: "Lệnh sản xuất",
+      detail: row.productionNo || "Chưa tạo LSX",
+      status: row.rootId ? "DONE" : "WAIT",
+    },
+    {
+      title: "Lô sản xuất",
+      detail: row.lotNo || "Chưa vào lô",
+      status: row.lotNo ? "DONE" : "WAIT",
+    },
+    {
+      title: "Cánh",
+      detail: `${row.canh.percent}% • ${row.canh.currentWo}`,
+      status:
+        row.canh.status === "COMPLETED"
+          ? "DONE"
+          : row.canh.total > 0
+          ? "RUN"
+          : "WAIT",
+    },
+    {
+      title: "Khung",
+      detail: `${row.khung.percent}% • ${row.khung.currentWo}`,
+      status:
+        row.khung.status === "COMPLETED"
+          ? "DONE"
+          : row.khung.total > 0
+          ? "RUN"
+          : "WAIT",
+    },
+    {
+      title: "Phào",
+      detail: `${row.phao.percent}% • ${row.phao.currentWo}`,
+      status:
+        row.phao.status === "COMPLETED"
+          ? "DONE"
+          : row.phao.total > 0
+          ? "RUN"
+          : "WAIT",
+    },
+    {
+      title: "Đủ Bộ",
+      detail: row.fullSetReady
+        ? "Đã đủ Cánh + Khung + Phào"
+        : "Đang chờ hội tụ",
+      status: row.fullSetReady ? "DONE" : row.rootId ? "RUN" : "WAIT",
+    },
+    {
+      title: "Công đoạn chung",
+      detail: `${row.commonCurrentWo} • ${row.commonCurrentOperation}`,
+      status:
+        row.commonCompleted > 0 ||
+        row.commonCurrentWo !== "-"
+          ? row.rootStatus === "COMPLETED"
+            ? "DONE"
+            : "RUN"
+          : "WAIT",
+    },
+    {
+      title: "Hoàn thành",
+      detail:
+        row.rootStatus === "COMPLETED"
+          ? "Sản xuất hoàn thành"
+          : `${row.overallPercent}% tổng tiến độ`,
+      status: row.rootStatus === "COMPLETED" ? "DONE" : "WAIT",
+    },
+  ];
+
+  return (
+    <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
+        Timeline đơn hàng
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <div className="flex min-w-[1050px] items-start">
+          {steps.map((step, index) => (
+            <div
+              key={step.title}
+              className="relative flex min-w-[115px] flex-1 flex-col items-center text-center"
+            >
+              {index < steps.length - 1 && (
+                <div className="absolute left-1/2 top-4 h-0.5 w-full bg-slate-200" />
+              )}
+
+              <div
+                className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-extrabold ${timelineClass(
+                  step.status
+                )}`}
+              >
+                {step.status === "DONE"
+                  ? "✓"
+                  : step.status === "RUN"
+                  ? "●"
+                  : index + 1}
+              </div>
+
+              <div className="mt-2 text-xs font-bold text-slate-800">
+                {step.title}
+              </div>
+              <div className="mt-1 max-w-[120px] text-[10px] leading-4 text-slate-500">
+                {step.detail}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function timelineClass(status: string) {
+  if (status === "DONE") {
+    return "border-emerald-500 bg-emerald-500 text-white";
+  }
+
+  if (status === "RUN") {
+    return "border-blue-500 bg-blue-50 text-blue-600";
+  }
+
+  return "border-slate-300 bg-white text-slate-400";
 }
 
 function ComponentCard({

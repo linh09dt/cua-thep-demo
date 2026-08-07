@@ -1,0 +1,103 @@
+RESET DỮ LIỆU DEMO - GIỮ LẠI 200 ĐƠN
+
+CHỈ 3 FILE THAY ĐỔI:
+- app/configuration/page.tsx
+- app/api/configuration/reset/route.ts
+- supabase/migrations/202608080014_reset_demo_keep_200.sql
+
+=================================================
+RESET SẼ XÓA
+=================================================
+
+- production_reports
+- production_dispatch_items
+- production_dispatch_headers
+- production_orders
+- production_lot_items
+- production_lots
+- các đơn hàng ngoài 200 đơn được giữ
+
+=================================================
+RESET SẼ GIỮ
+=================================================
+
+- đúng 200 đơn hàng
+- order_master_data
+- production_operations
+- production_routings
+- production_routing_steps
+- production_capacities
+- production_priority_master
+- production_priority_rules
+- production_wip_settings
+
+200 đơn ưu tiên:
+1. đơn có ghi_chu bắt đầu [DEMO200]
+2. nếu thiếu thì lấy thêm đơn cũ nhất
+
+Sau reset:
+- 200 đơn -> trạng thái Mới
+- production_order_no_seq -> bắt đầu lại LSX-000001
+
+=================================================
+SUPABASE
+=================================================
+
+BẮT BUỘC chạy migration:
+
+supabase/migrations/202608080014_reset_demo_keep_200.sql
+
+Supabase Dashboard
+-> SQL Editor
+-> New query
+-> Copy toàn bộ migration
+-> Run
+
+=================================================
+TEST
+=================================================
+
+Mở:
+http://localhost:3000/configuration
+
+Chọn:
+Reset dữ liệu
+
+Nhập:
+RESET
+
+Bấm:
+RESET DỮ LIỆU DEMO
+
+Sau đó kiểm tra:
+- /orders: còn đúng 200 đơn
+- /production-lots: không còn Lô
+- /production-orders: không còn LSX
+- /dispatch: không còn Dispatch
+- /production-report: không còn Report
+- Cấu hình/Capacity/Priority/WIP vẫn giữ nguyên
+
+=================================================
+CMD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm run build
+
+Nếu build OK:
+
+git add app/configuration/page.tsx app/api/configuration/reset/route.ts supabase/migrations/202608080014_reset_demo_keep_200.sql
+
+git commit -m "Add demo data reset keeping 200 orders"
+
+git push
+
+=================================================
+SUPABASE CLI
+=================================================
+
+Nếu CLI hoạt động:
+
+npx supabase link --project-ref welbaxamhikjdmocevlb
+npx supabase db push

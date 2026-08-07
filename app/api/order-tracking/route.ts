@@ -177,6 +177,40 @@ export async function GET() {
     if (productionResult.error) throw productionResult.error;
     if (statusResult.error) throw statusResult.error;
 
+    const { data: lotItems, error: lotItemsError } =
+      await supabaseAdmin
+        .from("production_lot_items")
+        .select("lot_id, order_id, production_order_id");
+
+    if (lotItemsError) throw lotItemsError;
+
+    const lotIds = Array.from(
+      new Set((lotItems ?? []).map((item) => item.lot_id))
+    );
+
+    let lots: any[] = [];
+
+    if (lotIds.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("production_lots")
+        .select("id, lot_no, lot_name, status, production_date, target_delivery_date")
+        .in("id", lotIds);
+
+      if (error) throw error;
+      lots = data ?? [];
+    }
+
+    const lotMap = new Map(
+      lots.map((lot) => [lot.id, lot])
+    );
+
+    const lotByOrder = new Map<string, any>();
+
+    for (const item of lotItems ?? []) {
+      const lot = lotMap.get(item.lot_id);
+      if (lot) lotByOrder.set(item.order_id, lot);
+    }
+
     const productionOrders =
       (productionResult.data ?? []) as unknown as ProductionOrderRow[];
 
@@ -258,6 +292,8 @@ export async function GET() {
             )
           : 0;
 
+      const lot = lotByOrder.get(order.id);
+
       return {
         id: order.id,
         orderNo: order.don_hang ?? "",
@@ -278,6 +314,12 @@ export async function GET() {
           productionRows
         ),
         note: order.ghi_chu ?? "",
+
+        lotNo: lot?.lot_no ?? "",
+        lotName: lot?.lot_name ?? "",
+        lotStatus: lot?.status ?? "",
+        lotProductionDate: lot?.production_date ?? "",
+        lotTargetDeliveryDate: lot?.target_delivery_date ?? "",
 
         rootId: root?.id ?? null,
         productionNo: root?.production_no ?? "",
