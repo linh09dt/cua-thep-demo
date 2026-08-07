@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-type Branch = "CÁNH" | "KHUNG" | "PHÀO";
+type Branch = "CÁNH" | "KHUNG" | "PHÀO" | "ĐỦ BỘ";
 
 function numericWo(woCode: string) {
   const value = Number(String(woCode).replace(/\D/g, ""));
@@ -14,6 +14,7 @@ function getBranch(woCode: string): Branch | null {
   if (no >= 1 && no <= 5) return "CÁNH";
   if (no >= 6 && no <= 10) return "KHUNG";
   if (no >= 11 && no <= 13) return "PHÀO";
+  if (no >= 14 && no <= 20) return "ĐỦ BỘ";
 
   return null;
 }
@@ -22,7 +23,6 @@ async function loadOperations() {
   const { data, error } = await supabaseAdmin
     .from("production_operations")
     .select("id, wo_code, operation_code, operation_name, component_scope, stage_type")
-    .eq("stage_type", "BRANCH")
     .eq("is_active", true);
 
   if (error) throw error;
@@ -273,6 +273,31 @@ async function completeOperationIfNeeded(productionOrderId: string) {
     return;
   }
 
+  const rootId = productionOrder.root_id;
+
+  // Luồng chung ĐỦ BỘ:
+  // WO20 là công đoạn cuối RT_CHUNG. Khi WO20 hoàn thành,
+  // đánh dấu LSX Cha/Root hoàn thành.
+  if (productionOrder.component_type === "ĐỦ BỘ") {
+    if (rootId) {
+      const { error: completeRootError } = await supabaseAdmin
+        .from("production_orders")
+        .update({
+          status: "COMPLETED",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", rootId)
+        .eq("level_no", 1);
+
+      if (completeRootError) throw completeRootError;
+    }
+
+    return;
+  }
+
+  // Cánh / Khung / Phào:
+  // Khi hết Routing nhánh thì LSX Con hoàn thành,
+  // sau đó kiểm tra đủ bộ để mở WO14.
   const { error: completeParentError } = await supabaseAdmin
     .from("production_orders")
     .update({
@@ -283,8 +308,6 @@ async function completeOperationIfNeeded(productionOrderId: string) {
     .eq("level_no", 2);
 
   if (completeParentError) throw completeParentError;
-
-  const rootId = productionOrder.root_id;
 
   if (rootId) {
     const { error: gateError } = await supabaseAdmin.rpc(

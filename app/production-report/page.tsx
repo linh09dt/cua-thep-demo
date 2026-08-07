@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/app-shell";
 
-type Branch = "CÁNH" | "KHUNG" | "PHÀO";
+type Branch = "CÁNH" | "KHUNG" | "PHÀO" | "ĐỦ BỘ";
 
 type Operation = {
   id: string;
@@ -33,7 +33,7 @@ type ReportRow = {
   remain: number;
 };
 
-const BRANCHES: Branch[] = ["CÁNH", "KHUNG", "PHÀO"];
+const BRANCHES: Branch[] = ["CÁNH", "KHUNG", "PHÀO", "ĐỦ BỘ"];
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -267,8 +267,9 @@ export default function ProductionReportPage() {
             Báo cáo sản xuất
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Báo cáo trên Dispatch đã Release. Khi Remain = 0,
-            WO hoàn thành và WO kế tiếp đủ điều kiện Điều độ.
+            Báo cáo trên Dispatch đã Release. Cánh / Khung / Phào và
+            luồng Đủ Bộ WO14-WO20 được theo dõi riêng. Khi Remain = 0,
+            WO hiện tại hoàn thành.
           </p>
         </div>
 
@@ -581,5 +582,6 @@ function formatDate(value: string) {
 function toTitle(value: Branch) {
   if (value === "CÁNH") return "Cánh";
   if (value === "KHUNG") return "Khung";
-  return "Phào";
+  if (value === "PHÀO") return "Phào";
+  return "Đủ Bộ";
 }
