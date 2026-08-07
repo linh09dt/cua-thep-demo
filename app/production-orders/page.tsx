@@ -14,8 +14,6 @@ type SalesOrder = {
   rong: number;
   so_luong: number;
   trang_thai: string;
-  lot_no: string;
-  lot_status: string;
 };
 
 type ProductionOrder = {
@@ -141,12 +139,7 @@ export default function ProductionOrdersPage() {
 
   function toggleAllVisible() {
     const available = filteredOrders
-      .filter(
-        (order) =>
-          !rootByOrder.has(order.id) &&
-          (order.lot_status === "RELEASED" ||
-            order.lot_status === "RUNNING")
-      )
+      .filter((order) => !rootByOrder.has(order.id))
       .map((order) => order.id);
 
     const allSelected = available.length > 0 && available.every((id) => selected.includes(id));
@@ -167,8 +160,8 @@ export default function ProductionOrdersPage() {
           </p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">Tạo lệnh sản xuất</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Đơn hàng phải thuộc Lô sản xuất đã RELEASED trước khi tạo LSX.
-            Sau đó sinh LSX Cha → Cánh / Khung / Phào → WO theo Routing.
+            Tạo LSX trực tiếp từ đơn hàng. Sau khi có LSX Cha → Cánh /
+            Khung / Phào → WO theo Routing, kế hoạch mới chọn LSX vào Lô sản xuất.
           </p>
         </div>
 
@@ -225,7 +218,6 @@ export default function ProductionOrdersPage() {
                     <Th>Model</Th>
                     <Th>Màu</Th>
                     <Th>SL</Th>
-                    <Th>Lô SX</Th>
                     <Th>LSX</Th>
                     <Th>Thao tác</Th>
                   </tr>
@@ -238,12 +230,7 @@ export default function ProductionOrdersPage() {
                         <Td center>
                           <input
                             type="checkbox"
-                            disabled={
-                              Boolean(root) ||
-                              !["RELEASED", "RUNNING"].includes(
-                                order.lot_status
-                              )
-                            }
+                            disabled={Boolean(root)}
                             checked={selected.includes(order.id)}
                             onChange={() => toggle(order.id)}
                           />
@@ -254,20 +241,6 @@ export default function ProductionOrdersPage() {
                         <Td center>{order.model}</Td>
                         <Td center>{order.mau}</Td>
                         <Td center>{order.so_luong}</Td>
-                        <Td center>
-                          {order.lot_no ? (
-                            <div>
-                              <div className="text-xs font-bold text-blue-700">
-                                {order.lot_no}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                {order.lot_status}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-red-500">Chưa vào lô</span>
-                          )}
-                        </Td>
                         <Td center>
                           {root ? (
                             <button
@@ -282,10 +255,7 @@ export default function ProductionOrdersPage() {
                           )}
                         </Td>
                         <Td center>
-                          {!root &&
-                            ["RELEASED", "RUNNING"].includes(
-                              order.lot_status
-                            ) && (
+                          {!root && (
                             <button
                               type="button"
                               onClick={() => createOne(order.id)}

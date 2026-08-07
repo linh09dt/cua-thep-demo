@@ -24,6 +24,7 @@ async function loadData() {
     lotsResult,
     itemsResult,
     ordersResult,
+    rootsResult,
     productionResult,
     reportsResult,
   ] = await Promise.all([
@@ -35,15 +36,25 @@ async function loadData() {
 
     supabaseAdmin
       .from("production_lot_items")
-      .select("id, lot_id, order_id, sequence_no")
+      .select(
+        "id, lot_id, order_id, production_order_id, sequence_no"
+      )
       .order("sequence_no", { ascending: true }),
 
     supabaseAdmin
       .from("steel_door_orders")
       .select(
         "id, don_hang, dai_ly, ngay_dat, ngay_giao, model, mau, cao, rong, so_luong, trang_thai"
+      ),
+
+    supabaseAdmin
+      .from("production_orders")
+      .select(
+        "id, order_id, production_no, quantity, status, created_at"
       )
-      .order("ngay_giao", { ascending: true }),
+      .eq("level_no", 1)
+      .neq("status", "CANCELLED")
+      .order("created_at", { ascending: true }),
 
     supabaseAdmin
       .from("production_orders")
@@ -58,11 +69,23 @@ async function loadData() {
   if (lotsResult.error) throw lotsResult.error;
   if (itemsResult.error) throw itemsResult.error;
   if (ordersResult.error) throw ordersResult.error;
+  if (rootsResult.error) throw rootsResult.error;
   if (productionResult.error) throw productionResult.error;
   if (reportsResult.error) throw reportsResult.error;
 
+  const orderMap = new Map(
+    (ordersResult.data ?? []).map((order) => [order.id, order])
+  );
+
+  const rootMap = new Map(
+    (rootsResult.data ?? []).map((root) => [root.id, root])
+  );
+
   const terminalOps = await getTerminalOperationIds();
-  const terminalByOperation = new Map<string, "CÁNH" | "KHUNG" | "PHÀO">();
+  const terminalByOperation = new Map<
+    string,
+    "CÁNH" | "KHUNG" | "PHÀO"
+  >();
 
   const wo05 = terminalOps.get("WO05");
   const wo10 = terminalOps.get("WO10");
@@ -72,6 +95,7 @@ async function loadData() {
   if (wo13) terminalByOperation.set(wo13, "PHÀO");
 
   const reportGoodByProductionOrder = new Map<string, number>();
+
   for (const report of reportsResult.data ?? []) {
     reportGoodByProductionOrder.set(
       report.production_order_id,
@@ -110,34 +134,45 @@ async function loadData() {
     readyByOrder.set(po.order_id, orderReady);
   }
 
-  const orderMap = new Map(
-    (ordersResult.data ?? []).map((order) => [order.id, order])
-  );
-
   const itemsByLot = new Map<string, any[]>();
-  const assignedOrderIds = new Set<string>();
+  const assignedRootIds = new Set<string>();
 
   for (const item of itemsResult.data ?? []) {
-    assignedOrderIds.add(item.order_id);
-    const order = orderMap.get(item.order_id);
+    const root = item.production_order_id
+      ? rootMap.get(item.production_order_id)
+      : (rootsResult.data ?? []).find(
+          (x) => x.order_id === item.order_id
+        );
+
+    if (!root) continue;
+
+    assignedRootIds.add(root.id);
+
+    const order = orderMap.get(root.order_id);
     if (!order) continue;
 
-    const ready = readyByOrder.get(item.order_id) ?? {
+    const ready = readyByOrder.get(root.order_id) ?? {
       canh: 0,
       khung: 0,
       phao: 0,
     };
 
-    const quantity = num(order.so_luong);
+    const quantity = num(root.quantity || order.so_luong);
     const canhReady = Math.min(quantity, ready.canh);
     const khungReady = Math.min(quantity, ready.khung);
     const phaoReady = Math.min(quantity, ready.phao);
-    const fullSetReady = Math.min(canhReady, khungReady, phaoReady);
+    const fullSetReady = Math.min(
+      canhReady,
+      khungReady,
+      phaoReady
+    );
 
     const row = {
       id: item.id,
       lotId: item.lot_id,
-      orderId: item.order_id,
+      productionOrderId: root.id,
+      productionNo: root.production_no,
+      orderId: root.order_id,
       sequenceNo: item.sequence_no,
       orderNo: order.don_hang ?? "",
       dealer: order.dai_ly ?? "",
@@ -146,6 +181,7 @@ async function loadData() {
       model: order.model ?? "",
       color: order.mau ?? "",
       quantity,
+      rootStatus: root.status,
       canhReady,
       khungReady,
       phaoReady,
@@ -160,12 +196,6 @@ async function loadData() {
   const lots = (lotsResult.data ?? []).map((lot) => {
     const items = itemsByLot.get(lot.id) ?? [];
 
-    const totalQty = items.reduce((s, x) => s + x.quantity, 0);
-    const canhReady = items.reduce((s, x) => s + x.canhReady, 0);
-    const khungReady = items.reduce((s, x) => s + x.khungReady, 0);
-    const phaoReady = items.reduce((s, x) => s + x.phaoReady, 0);
-    const fullSetReady = items.reduce((s, x) => s + x.fullSetReady, 0);
-
     return {
       id: lot.id,
       lotNo: lot.lot_no,
@@ -176,30 +206,43 @@ async function loadData() {
       status: lot.status,
       note: lot.note ?? "",
       totalOrders: items.length,
-      totalQty,
-      canhReady,
-      khungReady,
-      phaoReady,
-      fullSetReady,
+      totalQty: items.reduce((s, x) => s + x.quantity, 0),
+      canhReady: items.reduce((s, x) => s + x.canhReady, 0),
+      khungReady: items.reduce((s, x) => s + x.khungReady, 0),
+      phaoReady: items.reduce((s, x) => s + x.phaoReady, 0),
+      fullSetReady: items.reduce(
+        (s, x) => s + x.fullSetReady,
+        0
+      ),
       items,
     };
   });
 
-  const unassignedOrders = (ordersResult.data ?? [])
-    .filter((order) => !assignedOrderIds.has(order.id))
-    .map((order) => ({
-      id: order.id,
-      orderNo: order.don_hang ?? "",
-      dealer: order.dai_ly ?? "",
-      orderDate: order.ngay_dat ?? "",
-      dueDate: order.ngay_giao ?? "",
-      model: order.model ?? "",
-      color: order.mau ?? "",
-      quantity: num(order.so_luong),
-      status: order.trang_thai ?? "",
-    }));
+  const unassignedProductionOrders = (rootsResult.data ?? [])
+    .filter((root) => !assignedRootIds.has(root.id))
+    .map((root) => {
+      const order = orderMap.get(root.order_id);
 
-  return { lots, unassignedOrders };
+      return {
+        id: root.id,
+        productionOrderId: root.id,
+        productionNo: root.production_no,
+        orderId: root.order_id,
+        orderNo: order?.don_hang ?? "",
+        dealer: order?.dai_ly ?? "",
+        orderDate: order?.ngay_dat ?? "",
+        dueDate: order?.ngay_giao ?? "",
+        model: order?.model ?? "",
+        color: order?.mau ?? "",
+        quantity: num(root.quantity || order?.so_luong),
+        rootStatus: root.status,
+      };
+    });
+
+  return {
+    lots,
+    unassignedProductionOrders,
+  };
 }
 
 async function nextLotNo(productionDate: string) {
@@ -217,18 +260,57 @@ async function nextLotNo(productionDate: string) {
 
   const last = data?.[0]?.lot_no ?? "";
   const lastNo = Number(last.slice(prefix.length)) || 0;
+
   return `${prefix}${String(lastNo + 1).padStart(3, "0")}`;
 }
 
-async function addOrders(lotId: string, orderIds: string[]) {
-  if (orderIds.length === 0) return;
+async function addProductionOrders(
+  lotId: string,
+  productionOrderIds: string[]
+) {
+  if (productionOrderIds.length === 0) return;
 
-  const { data: existing, error: existingError } = await supabaseAdmin
-    .from("production_lot_items")
-    .select("sequence_no")
-    .eq("lot_id", lotId)
-    .order("sequence_no", { ascending: false })
-    .limit(1);
+  const { data: roots, error: rootsError } =
+    await supabaseAdmin
+      .from("production_orders")
+      .select("id, order_id, level_no, status")
+      .in("id", productionOrderIds);
+
+  if (rootsError) throw rootsError;
+
+  const validRoots = (roots ?? []).filter(
+    (item) =>
+      item.level_no === 1 &&
+      item.status !== "CANCELLED"
+  );
+
+  if (validRoots.length !== productionOrderIds.length) {
+    throw new Error(
+      "Lô chỉ được nhận LSX Cha hợp lệ."
+    );
+  }
+
+  const { data: existingAssignments, error: assignmentError } =
+    await supabaseAdmin
+      .from("production_lot_items")
+      .select("production_order_id")
+      .in("production_order_id", productionOrderIds);
+
+  if (assignmentError) throw assignmentError;
+
+  if ((existingAssignments ?? []).length > 0) {
+    throw new Error(
+      "Có LSX đã thuộc một Lô sản xuất khác."
+    );
+  }
+
+  const { data: existing, error: existingError } =
+    await supabaseAdmin
+      .from("production_lot_items")
+      .select("sequence_no")
+      .eq("lot_id", lotId)
+      .order("sequence_no", { ascending: false })
+      .limit(1);
 
   if (existingError) throw existingError;
 
@@ -237,9 +319,10 @@ async function addOrders(lotId: string, orderIds: string[]) {
   const { error } = await supabaseAdmin
     .from("production_lot_items")
     .insert(
-      orderIds.map((orderId, index) => ({
+      validRoots.map((root, index) => ({
         lot_id: lotId,
-        order_id: orderId,
+        order_id: root.order_id,
+        production_order_id: root.id,
         sequence_no: start + (index + 1) * 10,
       }))
     );
@@ -273,25 +356,37 @@ export async function POST(request: Request) {
     const action = String(body?.action ?? "");
 
     if (action === "create") {
-      const productionDate = String(body?.productionDate ?? "");
-      const targetDeliveryDate = String(body?.targetDeliveryDate ?? "");
+      const productionDate = String(
+        body?.productionDate ?? ""
+      );
+      const targetDeliveryDate = String(
+        body?.targetDeliveryDate ?? ""
+      );
       const lotName = String(body?.lotName ?? "").trim();
       const note = String(body?.note ?? "").trim();
       const priority = Number(body?.priority ?? 100);
-      const orderIds = Array.isArray(body?.orderIds)
-        ? body.orderIds.filter(Boolean)
+      const productionOrderIds = Array.isArray(
+        body?.productionOrderIds
+      )
+        ? body.productionOrderIds.filter(Boolean)
         : [];
 
       if (!productionDate) {
         return NextResponse.json(
-          { success: false, message: "Thiếu ngày sản xuất." },
+          {
+            success: false,
+            message: "Thiếu ngày sản xuất.",
+          },
           { status: 400 }
         );
       }
 
-      if (orderIds.length === 0) {
+      if (productionOrderIds.length === 0) {
         return NextResponse.json(
-          { success: false, message: "Chưa chọn đơn hàng cho lô." },
+          {
+            success: false,
+            message: "Chưa chọn LSX cho Lô.",
+          },
           { status: 400 }
         );
       }
@@ -304,8 +399,11 @@ export async function POST(request: Request) {
           lot_no: lotNo,
           lot_name: lotName || null,
           production_date: productionDate,
-          target_delivery_date: targetDeliveryDate || null,
-          priority: Number.isFinite(priority) ? priority : 100,
+          target_delivery_date:
+            targetDeliveryDate || null,
+          priority: Number.isFinite(priority)
+            ? priority
+            : 100,
           status: "DRAFT",
           note: note || null,
         })
@@ -315,45 +413,62 @@ export async function POST(request: Request) {
       if (error) throw error;
 
       try {
-        await addOrders(lot.id, orderIds);
+        await addProductionOrders(
+          lot.id,
+          productionOrderIds
+        );
       } catch (error) {
         await supabaseAdmin
           .from("production_lots")
           .delete()
           .eq("id", lot.id);
+
         throw error;
       }
-    } else if (action === "add_orders") {
+    } else if (action === "add_production_orders") {
       const lotId = String(body?.lotId ?? "");
-      const orderIds = Array.isArray(body?.orderIds)
-        ? body.orderIds.filter(Boolean)
+      const productionOrderIds = Array.isArray(
+        body?.productionOrderIds
+      )
+        ? body.productionOrderIds.filter(Boolean)
         : [];
 
-      const { data: lot, error: lotError } = await supabaseAdmin
-        .from("production_lots")
-        .select("status")
-        .eq("id", lotId)
-        .single();
+      const { data: lot, error: lotError } =
+        await supabaseAdmin
+          .from("production_lots")
+          .select("status")
+          .eq("id", lotId)
+          .single();
 
       if (lotError) throw lotError;
+
       if (lot.status !== "DRAFT") {
-        throw new Error("Chỉ được thêm đơn khi Lô đang DRAFT.");
+        throw new Error(
+          "Chỉ được thêm LSX khi Lô đang DRAFT."
+        );
       }
 
-      await addOrders(lotId, orderIds);
-    } else if (action === "remove_order") {
+      await addProductionOrders(
+        lotId,
+        productionOrderIds
+      );
+    } else if (action === "remove_production_order") {
       const lotId = String(body?.lotId ?? "");
       const itemId = String(body?.itemId ?? "");
 
-      const { data: lot, error: lotError } = await supabaseAdmin
-        .from("production_lots")
-        .select("status")
-        .eq("id", lotId)
-        .single();
+      const { data: lot, error: lotError } =
+        await supabaseAdmin
+          .from("production_lots")
+          .select("status")
+          .eq("id", lotId)
+          .single();
 
       if (lotError) throw lotError;
+
       if (lot.status !== "DRAFT") {
-        throw new Error("Chỉ được bỏ đơn khi Lô đang DRAFT.");
+        throw new Error(
+          "Chỉ được bỏ LSX khi Lô đang DRAFT."
+        );
       }
 
       const { error } = await supabaseAdmin
@@ -366,13 +481,19 @@ export async function POST(request: Request) {
     } else if (action === "release") {
       const lotId = String(body?.lotId ?? "");
 
-      const { count, error: countError } = await supabaseAdmin
-        .from("production_lot_items")
-        .select("*", { count: "exact", head: true })
-        .eq("lot_id", lotId);
+      const { count, error: countError } =
+        await supabaseAdmin
+          .from("production_lot_items")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
+          .eq("lot_id", lotId);
 
       if (countError) throw countError;
-      if (!count) throw new Error("Lô chưa có đơn hàng.");
+      if (!count) {
+        throw new Error("Lô chưa có LSX.");
+      }
 
       const { error } = await supabaseAdmin
         .from("production_lots")
@@ -386,7 +507,10 @@ export async function POST(request: Request) {
       if (error) throw error;
     } else {
       return NextResponse.json(
-        { success: false, message: "Action không hợp lệ." },
+        {
+          success: false,
+          message: "Action không hợp lệ.",
+        },
         { status: 400 }
       );
     }

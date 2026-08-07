@@ -12,18 +12,19 @@ const steps = [
   },
   {
     no: "02",
-    title: "Tạo Lô sản xuất",
-    description:
-      "Kế hoạch gom các đơn có ngày giao và điều kiện sản xuất phù hợp thành Production Lot.",
-    detail:
-      "Lô là tầng cam kết kế hoạch; không thay thế LSX hay Dispatch theo WO.",
-  },
-  {
-    no: "03",
     title: "Tạo lệnh sản xuất",
     description:
       "Mỗi đơn hàng tạo 1 LSX Cha. Từ LSX Cha tự sinh 3 LSX Con: Cánh, Khung, Phào.",
-    detail: "Cấu trúc LSX Cha → LSX Con → WO.",
+    detail:
+      "LSX phản ánh nhu cầu sản xuất thực của đơn hàng và được tạo trước khi lập Lô.",
+  },
+  {
+    no: "03",
+    title: "Lập Lô sản xuất",
+    description:
+      "Kế hoạch chọn các LSX Cha đã tạo để gom thành Production Lot theo ngày sản xuất, ngày giao và Priority.",
+    detail:
+      "Lô là tầng gom kế hoạch; không tạo LSX và không thay thế Dispatch.",
   },
   {
     no: "04",
@@ -127,9 +128,9 @@ export default function ErpLogicPage() {
             <div className="flex min-w-[1710px] items-center gap-2">
               <FlowBox title="Đơn hàng" sub="Web Order" />
               <Arrow />
-              <FlowBox title="Lô sản xuất" sub="Production Lot" />
-              <Arrow />
               <FlowBox title="LSX Cha" sub="1 đơn = 1 LSX" />
+              <Arrow />
+              <FlowBox title="Lô sản xuất" sub="Gom LSX kế hoạch" />
               <Arrow />
               <FlowBox title="LSX Con" sub="Cánh / Khung / Phào" />
               <Arrow />
@@ -315,7 +316,7 @@ export default function ErpLogicPage() {
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5">
             <h2 className="font-bold text-slate-900">
-              12 bước vận hành
+              13 bước vận hành
             </h2>
             <p className="mt-1 text-xs text-slate-500">
               Trình tự chính của ERP demo hiện tại.
