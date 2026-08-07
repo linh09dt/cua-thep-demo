@@ -44,6 +44,27 @@ type DispatchItem = {
   width: number;
 };
 
+type DispatchMetrics = {
+  capacity: number;
+  capacityReleasedToday: number;
+  capacityRemaining: number;
+  wipMin: number;
+  wipCurrent: number;
+  wipTarget: number;
+  wipMax: number;
+  wipNeedToTarget: number;
+  autoDispatchLimit: number;
+  unitName: string;
+  wipActive: boolean;
+  wipStatus:
+    | "DISABLED"
+    | "LOW"
+    | "BELOW_TARGET"
+    | "TARGET"
+    | "NEAR_MAX"
+    | "OVER_MAX";
+};
+
 type Header = {
   id: string;
   dispatch_date: string;
@@ -70,6 +91,7 @@ export default function DispatchPage() {
   const [items, setItems] = useState<DispatchItem[]>([]);
   const [eligible, setEligible] = useState<Candidate[]>([]);
   const [capacity, setCapacity] = useState(0);
+  const [metrics, setMetrics] = useState<DispatchMetrics | null>(null);
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -146,6 +168,8 @@ export default function DispatchPage() {
       setItems(result.items ?? []);
       setEligible(result.eligible ?? []);
       setCapacity(Number(result.capacity ?? 0));
+      setMetrics(result.metrics ?? null);
+      setMetrics(result.metrics ?? null);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Không thể tải Điều độ."
@@ -188,6 +212,8 @@ export default function DispatchPage() {
       setItems(result.items ?? []);
       setEligible(result.eligible ?? []);
       setCapacity(Number(result.capacity ?? 0));
+      setMetrics(result.metrics ?? null);
+      setMetrics(result.metrics ?? null);
 
       if (action === "auto_generate") {
         setMessage("Đã tự động tạo Dispatch Draft theo Priority + Capacity.");
@@ -319,12 +345,49 @@ export default function DispatchPage() {
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Summary title="WO" value={selectedOperation?.wo_code ?? "-"} />
             <Summary title="Capacity hiệu dụng" value={capacity} />
-            <Summary title="Đã cấp" value={planned} />
-            <Summary title="Còn lại" value={remaining} />
             <Summary
-              title="Mức tải"
-              value={`${loadPercent}%`}
-              warning={loadPercent > 100}
+              title="Capacity còn lại"
+              value={metrics?.capacityRemaining ?? remaining}
+            />
+            <Summary
+              title="WIP hiện tại"
+              value={`${metrics?.wipCurrent ?? 0} ${
+                metrics?.unitName ?? "bộ"
+              }`}
+            />
+            <Summary
+              title="Đề xuất Auto Dispatch"
+              value={`${metrics?.autoDispatchLimit ?? 0} ${
+                metrics?.unitName ?? "bộ"
+              }`}
+              warning={(metrics?.wipStatus ?? "") === "OVER_MAX"}
+            />
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <Summary
+              title="WIP Min"
+              value={`${metrics?.wipMin ?? 0} ${metrics?.unitName ?? "bộ"}`}
+            />
+            <Summary
+              title="WIP Target"
+              value={`${metrics?.wipTarget ?? 0} ${
+                metrics?.unitName ?? "bộ"
+              }`}
+            />
+            <Summary
+              title="WIP Max"
+              value={`${metrics?.wipMax ?? 0} ${metrics?.unitName ?? "bộ"}`}
+            />
+            <Summary
+              title="Thiếu đến Target"
+              value={`${metrics?.wipNeedToTarget ?? 0} ${
+                metrics?.unitName ?? "bộ"
+              }`}
+            />
+            <Summary
+              title="Draft hiện tại"
+              value={`${planned} ${metrics?.unitName ?? "bộ"}`}
             />
           </div>
 
@@ -341,6 +404,15 @@ export default function DispatchPage() {
             <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-600">
               {toTitle(branch)}
             </span>
+            {metrics && (
+              <span
+                className={`rounded-full px-3 py-1 font-bold ${wipStatusClass(
+                  metrics.wipStatus
+                )}`}
+              >
+                {wipStatusLabel(metrics.wipStatus)}
+              </span>
+            )}
           </div>
         </section>
 
@@ -436,7 +508,7 @@ export default function DispatchPage() {
               <p className="mt-1 text-xs text-slate-500">
                 {branch === "ĐỦ BỘ"
                   ? "WO14 chỉ xuất hiện khi Cánh + Khung + Phào đã COMPLETED. WO15-WO20 chỉ xuất hiện khi WO chung trước đã COMPLETED."
-                  : "WO đầu nhánh vào trực tiếp. WO sau chỉ xuất hiện khi WO trước đã COMPLETED."}
+                  : "WO đầu nhánh vào trực tiếp. WO sau được Eligible khi Dispatch của WO trước đã RELEASED; lượng Auto Dispatch được giới hạn bởi WIP Target và Capacity."}
               </p>
             </div>
 
@@ -565,6 +637,32 @@ function formatDate(value: string) {
   if (parts.length !== 3) return value;
 
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function wipStatusLabel(
+  status: DispatchMetrics["wipStatus"]
+) {
+  if (status === "DISABLED") return "WIP chưa bật";
+  if (status === "LOW") return "Thiếu WIP";
+  if (status === "BELOW_TARGET") return "Đang bù WIP";
+  if (status === "TARGET") return "Đạt WIP Target";
+  if (status === "NEAR_MAX") return "WIP gần Max";
+  return "WIP vượt Max";
+}
+
+function wipStatusClass(
+  status: DispatchMetrics["wipStatus"]
+) {
+  if (status === "LOW") return "bg-red-100 text-red-700";
+  if (status === "BELOW_TARGET")
+    return "bg-amber-100 text-amber-700";
+  if (status === "TARGET")
+    return "bg-emerald-100 text-emerald-700";
+  if (status === "NEAR_MAX")
+    return "bg-orange-100 text-orange-700";
+  if (status === "OVER_MAX")
+    return "bg-red-200 text-red-800";
+  return "bg-slate-100 text-slate-600";
 }
 
 function toTitle(value: Branch) {

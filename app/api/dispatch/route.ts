@@ -9,6 +9,35 @@ type PriorityRule = {
   direction: "ASC" | "DESC";
 };
 
+type WipSetting = {
+  wipMin: number;
+  wipTarget: number;
+  wipMax: number;
+  unitName: string;
+  isActive: boolean;
+};
+
+type DispatchMetrics = {
+  capacity: number;
+  capacityReleasedToday: number;
+  capacityRemaining: number;
+  wipMin: number;
+  wipCurrent: number;
+  wipTarget: number;
+  wipMax: number;
+  wipNeedToTarget: number;
+  autoDispatchLimit: number;
+  unitName: string;
+  wipActive: boolean;
+  wipStatus:
+    | "DISABLED"
+    | "LOW"
+    | "BELOW_TARGET"
+    | "TARGET"
+    | "NEAR_MAX"
+    | "OVER_MAX";
+};
+
 type Candidate = {
   productionOrderId: string;
   productionNo: string;
@@ -140,6 +169,163 @@ async function getCapacity(operationId: string) {
     Number(data.capacity_per_day || 0) *
       (Number(data.efficiency_percent || 0) / 100)
   );
+}
+
+
+async function getWipSetting(operationId: string): Promise<WipSetting> {
+  const { data, error } = await supabaseAdmin
+    .from("production_wip_settings")
+    .select("wip_min, wip_target, wip_max, unit_name, is_active")
+    .eq("operation_id", operationId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return {
+    wipMin: Number(data?.wip_min ?? 0),
+    wipTarget: Number(data?.wip_target ?? 0),
+    wipMax: Number(data?.wip_max ?? 0),
+    unitName: data?.unit_name ?? "bộ",
+    isActive: Boolean(data?.is_active ?? false),
+  };
+}
+
+async function getReleasedQuantity(operationId: string) {
+  const { data: headers, error: headerError } = await supabaseAdmin
+    .from("production_dispatch_headers")
+    .select("id")
+    .eq("operation_id", operationId)
+    .eq("status", "RELEASED");
+
+  if (headerError) throw headerError;
+
+  const headerIds = (headers ?? []).map((item) => item.id);
+  if (headerIds.length === 0) return 0;
+
+  const { data: items, error: itemError } = await supabaseAdmin
+    .from("production_dispatch_items")
+    .select("quantity")
+    .in("dispatch_id", headerIds);
+
+  if (itemError) throw itemError;
+
+  return (items ?? []).reduce(
+    (sum, item) => sum + Number(item.quantity || 0),
+    0
+  );
+}
+
+async function getReportedGood(operationId: string) {
+  const { data: productionOrders, error: orderError } = await supabaseAdmin
+    .from("production_orders")
+    .select("id")
+    .eq("operation_id", operationId)
+    .eq("level_no", 3);
+
+  if (orderError) throw orderError;
+
+  const orderIds = (productionOrders ?? []).map((item) => item.id);
+  if (orderIds.length === 0) return 0;
+
+  const { data: reports, error: reportError } = await supabaseAdmin
+    .from("production_reports")
+    .select("good_qty")
+    .in("production_order_id", orderIds);
+
+  if (reportError) throw reportError;
+
+  return (reports ?? []).reduce(
+    (sum, item) => sum + Number(item.good_qty || 0),
+    0
+  );
+}
+
+async function getReleasedToday(
+  operationId: string,
+  dispatchDate: string
+) {
+  const { data, error } = await supabaseAdmin
+    .from("production_dispatch_headers")
+    .select("planned_quantity")
+    .eq("operation_id", operationId)
+    .eq("dispatch_date", dispatchDate)
+    .eq("status", "RELEASED");
+
+  if (error) throw error;
+
+  return (data ?? []).reduce(
+    (sum, item) => sum + Number(item.planned_quantity || 0),
+    0
+  );
+}
+
+function getWipStatus(
+  setting: WipSetting,
+  wipCurrent: number
+): DispatchMetrics["wipStatus"] {
+  if (!setting.isActive) return "DISABLED";
+  if (setting.wipMax > 0 && wipCurrent > setting.wipMax) return "OVER_MAX";
+  if (wipCurrent < setting.wipMin) return "LOW";
+  if (wipCurrent < setting.wipTarget) return "BELOW_TARGET";
+  if (
+    setting.wipMax > 0 &&
+    wipCurrent >= Math.max(setting.wipTarget, setting.wipMax * 0.9)
+  ) {
+    return "NEAR_MAX";
+  }
+  return "TARGET";
+}
+
+async function getDispatchMetrics(
+  operationId: string,
+  dispatchDate: string
+): Promise<DispatchMetrics> {
+  const [capacity, setting, releasedQty, goodQty, releasedToday] =
+    await Promise.all([
+      getCapacity(operationId),
+      getWipSetting(operationId),
+      getReleasedQuantity(operationId),
+      getReportedGood(operationId),
+      getReleasedToday(operationId, dispatchDate),
+    ]);
+
+  // WIP hiện tại của WO = lượng Dispatch đã RELEASED tại chính WO đó
+  // nhưng chưa được báo Good hoàn thành.
+  const wipCurrent = Math.max(0, releasedQty - goodQty);
+  const capacityRemaining = Math.max(0, capacity - releasedToday);
+
+  // Nếu WIP chưa bật hoặc Target = 0 thì giữ cơ chế Capacity hiện tại.
+  const wipNeedToTarget =
+    setting.isActive && setting.wipTarget > 0
+      ? Math.max(0, setting.wipTarget - wipCurrent)
+      : capacityRemaining;
+
+  const overMax =
+    setting.isActive &&
+    setting.wipMax > 0 &&
+    wipCurrent >= setting.wipMax;
+
+  const autoDispatchLimit = overMax
+    ? 0
+    : Math.max(
+        0,
+        Math.min(capacityRemaining, wipNeedToTarget)
+      );
+
+  return {
+    capacity,
+    capacityReleasedToday: releasedToday,
+    capacityRemaining,
+    wipMin: setting.wipMin,
+    wipCurrent,
+    wipTarget: setting.wipTarget,
+    wipMax: setting.wipMax,
+    wipNeedToTarget,
+    autoDispatchLimit,
+    unitName: setting.unitName,
+    wipActive: setting.isActive,
+    wipStatus: getWipStatus(setting, wipCurrent),
+  };
 }
 
 async function getPriorityRules(operationId: string) {
@@ -286,6 +472,55 @@ async function getCandidates(operationId: string) {
 
   if (parentIds.length === 0) return [];
 
+  // CÁNH / KHUNG / PHÀO:
+  // WO sau được Eligible ngay khi Dispatch của WO trước đã RELEASED.
+  // Không còn chờ WO trước COMPLETED để cho phép điều độ gối đầu.
+  if (
+    operation.branch === "CÁNH" ||
+    operation.branch === "KHUNG" ||
+    operation.branch === "PHÀO"
+  ) {
+    const { data: previousOrders, error: previousOrdersError } =
+      await supabaseAdmin
+        .from("production_orders")
+        .select("id, parent_id, production_no")
+        .eq("operation_id", routing.previousOperationId)
+        .in("parent_id", parentIds);
+
+    if (previousOrdersError) throw previousOrdersError;
+
+    const releasedPreviousIds = await getReleasedOrderIds(
+      routing.previousOperationId
+    );
+
+    const releasedByParent = new Map<string, string>();
+
+    for (const item of previousOrders ?? []) {
+      if (
+        item.parent_id &&
+        releasedPreviousIds.has(item.id)
+      ) {
+        releasedByParent.set(item.parent_id, item.production_no);
+      }
+    }
+
+    eligibleCurrent = eligibleCurrent.filter(
+      (item) =>
+        item.parent_id &&
+        releasedByParent.has(item.parent_id)
+    );
+
+    return eligibleCurrent.map((item: any) =>
+      mapCandidate(
+        item,
+        releasedByParent.get(item.parent_id) ?? item.production_no
+      )
+    );
+  }
+
+  // LUỒNG ĐỦ BỘ WO15-WO20:
+  // Giữ nguyên logic an toàn hiện tại: WO chung trước phải COMPLETED.
+  // WO14 vẫn do refresh_full_set_gate() mở khi đủ Cánh + Khung + Phào.
   const { data: previousOrders, error: previousOrdersError } =
     await supabaseAdmin
       .from("production_orders")
@@ -305,7 +540,9 @@ async function getCandidates(operationId: string) {
   }
 
   eligibleCurrent = eligibleCurrent.filter(
-    (item) => item.parent_id && completedByParent.has(item.parent_id)
+    (item) =>
+      item.parent_id &&
+      completedByParent.has(item.parent_id)
   );
 
   return eligibleCurrent.map((item: any) =>
@@ -417,12 +654,14 @@ async function loadScreen(dispatchDate: string, operationId?: string) {
       items: [],
       eligible: [],
       capacity: 0,
+      metrics: null,
       rules: [],
     };
   }
 
   const operation = await getOperation(operationId);
-  const capacity = await getCapacity(operationId);
+  const metrics = await getDispatchMetrics(operationId, dispatchDate);
+  const capacity = metrics.capacity;
   const rules = await getPriorityRules(operationId);
   const eligible = sortCandidates(await getCandidates(operationId), rules);
 
@@ -491,6 +730,7 @@ async function loadScreen(dispatchDate: string, operationId?: string) {
       (candidate) => !currentIds.has(candidate.productionOrderId)
     ),
     capacity,
+    metrics,
     rules,
   };
 }
@@ -550,7 +790,12 @@ export async function POST(request: Request) {
         await getPriorityRules(operationId)
       );
 
-      const capacity = await getCapacity(operationId);
+      const metrics = await getDispatchMetrics(
+        operationId,
+        dispatchDate
+      );
+      const dispatchLimit = metrics.autoDispatchLimit;
+
       let used = 0;
       const selected: Candidate[] = [];
 
@@ -558,7 +803,9 @@ export async function POST(request: Request) {
         const qty = Number(candidate.quantity || 0);
         if (qty <= 0) continue;
 
-        if (used + qty <= capacity) {
+        // Không tách LSX. Chỉ lấy dòng nào còn nằm trong
+        // giới hạn nhỏ hơn giữa WIP cần bù và Capacity còn lại.
+        if (used + qty <= dispatchLimit) {
           selected.push(candidate);
           used += qty;
         }
@@ -622,10 +869,34 @@ export async function POST(request: Request) {
         (sum, item) => sum + Number(item.quantity || 0),
         0
       );
-      const capacity = await getCapacity(operationId);
 
-      if (used + candidate.quantity > capacity) {
-        throw new Error(`Vượt Capacity: ${used + candidate.quantity}/${capacity}.`);
+      const metrics = await getDispatchMetrics(
+        operationId,
+        dispatchDate
+      );
+
+      const capacityAvailableForDraft = Math.max(
+        0,
+        metrics.capacityRemaining - used
+      );
+
+      if (candidate.quantity > capacityAvailableForDraft) {
+        throw new Error(
+          `Vượt Capacity còn lại: cần ${candidate.quantity}, còn ${capacityAvailableForDraft}.`
+        );
+      }
+
+      if (
+        metrics.wipActive &&
+        metrics.wipMax > 0 &&
+        metrics.wipCurrent + used + candidate.quantity >
+          metrics.wipMax
+      ) {
+        throw new Error(
+          `Vượt WIP Max: ${
+            metrics.wipCurrent + used + candidate.quantity
+          }/${metrics.wipMax} ${metrics.unitName}.`
+        );
       }
 
       const nextSequence = (currentItems?.[0]?.sequence_no ?? 0) + 10;

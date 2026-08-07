@@ -28,8 +28,9 @@ const steps = [
     no: "04",
     title: "Capacity theo WO",
     description:
-      "Mỗi WO có Năng lực/ngày, Số ca, Giờ/ca, Hiệu suất và trạng thái hoạt động.",
-    detail: "Dùng để giới hạn lượng điều độ trong ngày.",
+      "Mỗi WO có Capacity hiệu dụng và WIP Min / Target / Max để điều tiết lượng công việc.",
+    detail:
+      "Capacity giới hạn lượng cấp trong ngày; WIP giữ dòng sản xuất không thiếu việc hoặc ùn việc.",
   },
   {
     no: "05",
@@ -42,8 +43,9 @@ const steps = [
     no: "06",
     title: "Điều độ sản xuất",
     description:
-      "Điều độ tách 3 nhánh Cánh / Khung / Phào. Auto Dispatch lấy Eligible → Priority → Capacity → Draft.",
-    detail: "Người kế hoạch có thể thêm/bỏ trước khi Release.",
+      "Điều độ tách Cánh / Khung / Phào / Đủ bộ. Auto Dispatch lấy Eligible → WIP → Capacity → Priority → Draft.",
+    detail:
+      "Với Cánh/Khung/Phào, WO sau được Eligible khi Dispatch WO trước đã RELEASED.",
   },
   {
     no: "07",
@@ -61,10 +63,11 @@ const steps = [
   },
   {
     no: "09",
-    title: "Tự mở WO kế tiếp",
+    title: "Điều độ gối đầu công đoạn",
     description:
-      "WO sau chỉ đủ điều kiện Điều độ khi WO trước của cùng LSX Con đã Completed.",
-    detail: "Luồng công đoạn chạy tuần tự theo Routing.",
+      "Trong 3 nhánh Cánh / Khung / Phào, WO sau được phép điều độ khi Dispatch WO trước đã RELEASED, không chờ hoàn thành toàn bộ.",
+    detail:
+      "WIP Target và Capacity quyết định lượng cấp; Priority quyết định LSX nào đi trước.",
   },
   {
     no: "10",
@@ -113,7 +116,7 @@ export default function ErpLogicPage() {
           </div>
 
           <div className="mt-4 overflow-x-auto">
-            <div className="flex min-w-[1450px] items-center gap-2">
+            <div className="flex min-w-[1580px] items-center gap-2">
               <FlowBox title="Đơn hàng" sub="Web Order" />
               <Arrow />
               <FlowBox title="LSX Cha" sub="1 đơn = 1 LSX" />
@@ -123,6 +126,8 @@ export default function ErpLogicPage() {
               <FlowBox title="Routing" sub="Sinh WO" />
               <Arrow />
               <FlowBox title="Capacity" sub="Giới hạn/ngày" />
+              <Arrow />
+              <FlowBox title="WIP" sub="Min / Target / Max" />
               <Arrow />
               <FlowBox title="Priority" sub="Thứ tự ưu tiên" />
               <Arrow />
@@ -235,32 +240,37 @@ export default function ErpLogicPage() {
               <LogicRow
                 no="1"
                 title="Kiểm tra Eligible"
-                text="WO đầu nhánh nhận LSX mới. WO sau chỉ nhận LSX khi WO trước đã Completed."
+                text="WO đầu nhánh nhận LSX mới. Với Cánh / Khung / Phào, WO sau nhận LSX khi Dispatch WO trước đã RELEASED."
               />
               <LogicRow
                 no="2"
-                title="Đọc Priority của WO"
-                text="Mỗi WO có bộ rule ưu tiên riêng, không dùng một rule chung cho toàn nhà máy."
+                title="Đọc WIP của WO"
+                text="WIP hiện tại = lượng Dispatch RELEASED tại WO - Good đã báo cáo. So sánh với WIP Min / Target / Max."
               />
               <LogicRow
                 no="3"
-                title="Sắp xếp danh sách"
-                text="Engine sắp LSX theo Rule 1 → Rule 2 → Rule 3..."
+                title="Tính lượng cần cấp"
+                text="Nếu WIP dưới Target, engine tính lượng thiếu đến Target. Nếu WIP đạt Max thì không Auto Dispatch thêm."
               />
               <LogicRow
                 no="4"
                 title="Kiểm tra Capacity"
-                text="Chỉ cấp lượng công việc trong giới hạn Capacity hiệu dụng của WO."
+                text="Lượng Auto Dispatch không vượt Capacity hiệu dụng còn lại trong ngày."
               />
               <LogicRow
                 no="5"
-                title="Tạo Dispatch Draft"
-                text="Người kế hoạch được quyền xem, thêm hoặc bỏ LSX trước khi phát hành."
+                title="Đọc Priority"
+                text="Sau khi biết lượng cần cấp, engine sắp Eligible theo Priority riêng của WO để chọn LSX."
               />
               <LogicRow
                 no="6"
+                title="Tạo Dispatch Draft"
+                text="Không tách LSX. Người kế hoạch được thêm/bỏ thủ công nhưng không được vượt Capacity hoặc WIP Max."
+              />
+              <LogicRow
+                no="7"
                 title="Release Dispatch"
-                text="Sau Release, danh sách trở thành kế hoạch chính thức cho công đoạn."
+                text="Sau Release, công việc chính thức xuống xưởng và đồng thời mở Eligible cho WO sau trong cùng nhánh."
               />
             </div>
 
@@ -271,6 +281,18 @@ export default function ErpLogicPage() {
 
               <div className="mt-2 text-sm text-slate-700">
                 <strong>Capacity hiệu dụng</strong> = Capacity/ngày × Hiệu suất %
+              </div>
+
+              <div className="mt-2 text-sm text-slate-700">
+                <strong>WIP hiện tại</strong> = Dispatch RELEASED tại WO - Good đã báo cáo
+              </div>
+
+              <div className="mt-2 text-sm text-slate-700">
+                <strong>Nhu cầu WIP</strong> = MAX(0, WIP Target - WIP hiện tại)
+              </div>
+
+              <div className="mt-2 text-sm text-slate-700">
+                <strong>Auto Dispatch tối đa</strong> = MIN(Nhu cầu WIP, Capacity còn lại)
               </div>
 
               <div className="mt-2 text-sm text-slate-700">
