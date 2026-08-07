@@ -1,0 +1,89 @@
+CẬP NHẬT TAB ĐƠN HÀNG - NHẬP TRỰC TIẾP TRÊN WEB
+
+Bản này chỉ sửa phần Đơn hàng đã thống nhất.
+Không thay module khác.
+
+FILE CẦN COPY ĐÈ:
+1. app/orders/page.tsx
+2. app/api/orders/route.ts
+
+FILE SQL MỚI:
+3. supabase/002_web_order_demo.sql
+
+
+BƯỚC 1 - CHẠY SQL
+
+Vào Supabase:
+SQL Editor -> New query
+
+Mở file:
+supabase/002_web_order_demo.sql
+
+Copy toàn bộ -> Run.
+
+SQL chỉ bổ sung:
+- so_luong
+- trang_thai
+
+Không xóa dữ liệu/cột cũ.
+
+
+BƯỚC 2 - COPY CODE
+
+Copy:
+app/orders/page.tsx
+app/api/orders/route.ts
+
+vào đúng project cua-thep-demo hiện tại.
+
+
+BƯỚC 3 - CHẠY LOCAL
+
+npm run dev
+
+Mở:
+http://localhost:3000/orders
+
+
+CHỨC NĂNG HIỆN TẠI
+
+- Nhập đơn trực tiếp bằng form web.
+- Lưu vào Supabase.
+- Sửa đơn.
+- Xóa đơn.
+- Tìm kiếm.
+- Lọc trạng thái.
+- Đưa đơn từ "Mới" -> "Đã lên kế hoạch".
+- Thẻ tổng hợp: tổng đơn, tổng SL, đã lên kế hoạch, đang sản xuất.
+
+
+TRƯỜNG DEMO
+
+- Đơn hàng
+- Đại lý
+- Ngày đặt
+- Ngày giao
+- Model
+- Màu
+- Cao
+- Rộng
+- Hướng mở
+- Số lượng
+- Khóa
+- Trạng thái
+- Ghi chú
+
+
+BƯỚC 4 - KIỂM TRA BUILD
+
+Ctrl + C
+npm run build
+
+
+BƯỚC 5 - GITHUB / VERCEL
+
+git add .
+git commit -m "Simplify steel door web order entry"
+git push
+
+Vercel sẽ tự deploy nếu project đã kết nối GitHub.

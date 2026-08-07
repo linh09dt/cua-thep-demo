@@ -1,0 +1,93 @@
+KẾT NỐI SUPABASE - DEMO CỬA THÉP
+
+1) CÀI PACKAGE
+
+Mở Terminal trong project cua-thep-demo:
+
+npm install @supabase/supabase-js
+
+
+2) TẠO PROJECT SUPABASE
+
+Vào Supabase Dashboard -> New project.
+Tạo project mới riêng cho demo cửa thép.
+
+
+3) TẠO TABLE
+
+Supabase -> SQL Editor -> New query.
+
+Mở file:
+supabase/001_create_steel_door_orders.sql
+
+Copy toàn bộ SQL -> Run.
+
+
+4) LẤY BIẾN MÔI TRƯỜNG
+
+Trong Supabase project, lấy:
+- Project URL
+- service_role key
+
+Tạo file .env.local tại thư mục gốc project:
+
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=xxxxxxxxxxxxxxxx
+
+QUAN TRỌNG:
+SUPABASE_SERVICE_ROLE_KEY là khóa bí mật.
+Không đưa khóa này vào app/client.
+Không commit .env.local lên GitHub.
+
+
+5) CHẠY LOCAL
+
+npm run dev
+
+Mở:
+http://localhost:3000/orders
+
+Bây giờ:
+- Trang tự tải dữ liệu từ Supabase.
+- Lưu đơn hàng -> upsert vào PostgreSQL.
+- Xóa -> xóa khỏi PostgreSQL.
+- Tải lại -> đọc dữ liệu từ PostgreSQL.
+
+
+6) KIỂM TRA BUILD
+
+Ctrl + C
+npm run build
+
+
+7) VERCEL
+
+Vercel -> Project cua-thep-demo -> Settings -> Environment Variables
+
+Thêm:
+NEXT_PUBLIC_SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+
+Chọn Production + Preview + Development nếu muốn dùng cùng project database.
+
+Sau đó Redeploy.
+
+
+8) GIT
+
+Không commit .env.local.
+
+git add .
+git commit -m "Connect steel door orders to Supabase"
+git push
+
+
+KIẾN TRÚC HIỆN TẠI
+
+Browser
+  -> /api/orders
+      -> lib/supabase-admin.ts
+          -> Supabase PostgreSQL
+
+Service Role Key chỉ tồn tại ở server.
+Không có policy public cho bảng steel_door_orders.

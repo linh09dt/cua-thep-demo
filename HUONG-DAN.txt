@@ -1,0 +1,32 @@
+FULL MÃ TAB NHẬP ĐƠN HÀNG - DEMO CỬA THÉP
+
+Chỉ thay/thêm các file sau vào project cua-thep-demo hiện tại:
+
+1. app/layout.tsx
+2. app/globals.css
+3. app/page.tsx
+4. app/orders/page.tsx
+5. components/app-shell.tsx
+
+Không cần cài package mới.
+
+Chạy:
+npm run dev
+
+Mở:
+http://localhost:3000
+http://localhost:3000/orders
+
+Kiểm tra build:
+Ctrl + C
+npm run build
+
+Nếu build OK:
+git add .
+git commit -m "Add steel door order entry"
+git push
+
+Hiện tại:
+- Chưa kết nối Supabase.
+- Nút Lưu chỉ thông báo, chưa lưu database.
+- Không có logic nghiệp vụ tự suy đoán.
