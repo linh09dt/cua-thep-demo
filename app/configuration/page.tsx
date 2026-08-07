@@ -1024,6 +1024,9 @@ function FlowBranch({
 const inputClass =
   "h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
+const wipNumberClass =
+  "h-9 w-[90px] rounded-md border border-slate-300 bg-white px-2 text-right text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
 function Field({
   label,
   children,
