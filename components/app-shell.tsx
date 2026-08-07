@@ -22,7 +22,7 @@ const menuGroups: MenuGroup[] = [
     theme: "overview",
     items: [
       { href: "/", label: "Dashboard điều hành", short: "DB" },
-      { href: "/planning-wizard", label: "Lập kế hoạch (Wizard)", short: "WZ" },
+      { href: "/planning-wizard", label: "Lập kế hoạch từng bước", short: "WZ" },
       { href: "/planning-alerts", label: "Cảnh báo kế hoạch", short: "CB" },
       { href: "/weekly-plan", label: "Kế hoạch 7 ngày", short: "7D" },
     ],

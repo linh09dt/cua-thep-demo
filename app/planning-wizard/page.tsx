@@ -90,13 +90,13 @@ export default function PlanningWizardPage() {
       <main className="mx-auto max-w-[1500px] p-5">
         <div className="mb-5">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-            Production Planning Wizard
+            Step-by-step Production Planning
           </p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">
-            Lập kế hoạch sản xuất
+            Lập kế hoạch từng bước
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Luồng hướng dẫn từng bước để người dùng không cần nhớ toàn bộ cấu trúc ERP.
+            Hướng dẫn từng bước từ đơn hàng đến thực thi và theo dõi kết quả sản xuất.
           </p>
         </div>
 
