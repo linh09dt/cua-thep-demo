@@ -1,0 +1,4 @@
+KIỂM TRA BUILD TRONG MÔI TRƯỜNG ĐÓNG GÓI:
+- Đã kiểm tra cấu trúc source và các file sửa.
+- Không thể chạy npm ci/build trong container vì registry nội bộ trả 404 cho package zod-validation-error@4.0.2.
+- Trên máy Windows của bạn chạy npm install rồi npm run build như hướng dẫn.

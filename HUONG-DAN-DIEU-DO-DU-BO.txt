@@ -1,0 +1,43 @@
+BỔ SUNG ĐIỀU ĐỘ ĐỦ BỘ
+
+Tab Điều độ hiện có:
+- Điều độ Cánh: WO01-WO05
+- Điều độ Khung: WO06-WO10
+- Điều độ Phào: WO11-WO13
+- Điều độ Đủ Bộ: WO14-WO20
+
+LOGIC WO14:
+Cánh COMPLETED
++ Khung COMPLETED
++ Phào COMPLETED
+=> refresh_full_set_gate mở khóa WO14
+=> LSX cha/bộ cửa xuất hiện ở Điều độ Đủ Bộ / WO14.
+
+LOGIC WO15-WO20:
+Chỉ đủ điều kiện sau khi WO chung trước COMPLETED.
+
+SUPABASE:
+Vào SQL Editor và chạy:
+supabase/migrations/202608070010_dispatch_full_set.sql
+
+CMD:
+cd /d D:\Projects\cua-thep-demo
+npm install
+npm run dev
+
+Test:
+1. Hoàn thành Cánh đến WO05.
+2. Hoàn thành Khung đến WO10.
+3. Hoàn thành Phào đến WO13.
+4. Vào Điều độ -> Điều độ Đủ Bộ.
+5. Chọn WO14 - Hàn Liên Kết.
+6. LSX đủ bộ phải xuất hiện ở danh sách Eligible.
+7. Tự động điều độ -> Release Dispatch.
+
+BUILD:
+Ctrl + C
+npm run build
+
+git add .
+git commit -m "Add full set dispatch flow"
+git push

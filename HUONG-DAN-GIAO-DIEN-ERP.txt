@@ -1,0 +1,42 @@
+DEMO CỬA THÉP - GIAO DIỆN ERP QUẢN LÝ & KẾ HOẠCH SẢN XUẤT
+
+ĐÃ SỬA GIAO DIỆN TOÀN HỆ THỐNG:
+- Sidebar ERP cố định bên trái
+- Menu chia nhóm: Tổng quan / Kế hoạch sản xuất / Thực thi & Báo cáo / Hệ thống
+- Topbar có tên module hiện tại, trạng thái hệ thống, ngày
+- Nội dung rộng theo màn hình quản trị ERP
+- Table/card/button/input đồng bộ phong cách ERP
+- Responsive: màn hình nhỏ sidebar chuyển thành menu trượt
+
+KHÔNG THAY ĐỔI:
+- Database
+- API
+- Logic Đơn hàng
+- LSX
+- Routing
+- Capacity
+- Priority
+- Dispatch
+- Báo cáo
+
+FILE CHÍNH ĐÃ SỬA:
+components/app-shell.tsx
+app/globals.css
+
+CMD:
+cd /d D:\Projects\cua-thep-demo
+npm install
+npm run dev
+
+BUILD:
+Ctrl + C
+npm run build
+
+SUPABASE:
+Không có migration mới.
+Không cần npx supabase db push
+
+GIT:
+git add .
+git commit -m "Redesign UI as production ERP"
+git push

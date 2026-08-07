@@ -1,0 +1,11 @@
+exit_code=127
+
+STDOUT:
+
+> cua-thep-demo@0.1.0 build
+> next build
+
+
+
+STDERR:
+sh: 1: next: Permission denied

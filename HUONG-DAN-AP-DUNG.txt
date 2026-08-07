@@ -1,0 +1,91 @@
+DEMO CỬA THÉP - TAB LOGIC VẬN HÀNH ERP
+
+BẢN NÀY CHỈ THÊM:
+- Menu Logic vận hành ERP
+- Trang /erp-logic
+
+KHÔNG THAY ĐỔI:
+- Database
+- Đơn hàng
+- Routing
+- Capacity
+- Priority
+- LSX
+- Điều độ
+- Báo cáo
+
+
+=================================================
+NỘI DUNG TAB
+=================================================
+
+- Luồng tổng thể ERP
+- Cây Cánh / Khung / Phào
+- Điểm hội tụ Đủ bộ
+- Luồng WO14-WO20
+- Logic Điều độ
+- Capacity / Priority
+- Báo cáo Good / NG / Remain
+- Tự mở WO sau
+- 12 bước vận hành ERP
+- Nguyên tắc kiến trúc hiện tại
+
+
+=================================================
+FILE
+=================================================
+
+Copy đè:
+components/app-shell.tsx
+
+Copy mới:
+app/erp-logic/page.tsx
+
+
+=================================================
+SUPABASE
+=================================================
+
+KHÔNG có migration mới.
+
+Không cần SQL Editor.
+Không cần:
+npx supabase db push
+
+
+=================================================
+CMD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm install
+npm run dev
+
+Mở:
+http://localhost:3000/erp-logic
+
+
+=================================================
+BUILD
+=================================================
+
+Ctrl + C
+npm run build
+
+
+=================================================
+GIT / VERCEL
+=================================================
+
+git add .
+git commit -m "Add ERP operating logic tab"
+git push
+
+
+=================================================
+SUPABASE CLI
+=================================================
+
+Bản này không đổi database.
+Không cần db push.

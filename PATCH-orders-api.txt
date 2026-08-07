@@ -1,0 +1,16 @@
+PATCH app/api/orders/route.ts
+
+Nếu đang có:
+
+type OrderStatus =
+  | "Mới"
+  | "Đã lên kế hoạch"
+  | "Đang sản xuất"
+  | "Hoàn thành";
+
+THAY BẰNG:
+
+type OrderStatus = string;
+
+Không cần thay logic database khác.
+Cột steel_door_orders.trang_thai hiện là text nên nhận trạng thái cấu hình mới.

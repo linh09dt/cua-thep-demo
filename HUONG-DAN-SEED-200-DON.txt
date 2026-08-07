@@ -1,0 +1,75 @@
+SEED 200 ĐƠN HÀNG DEMO - CỬA THÉP
+
+Mục đích:
+- Có sẵn 200 đơn hàng để demo với khách.
+- Không thay đổi database schema.
+- Không thay đổi code giao diện.
+- Có thể chạy lại an toàn.
+
+Dữ liệu gồm:
+- 12 đại lý
+- 4 Model
+- 4 màu
+- nhiều kích thước Cao/Rộng
+- hướng mở Trái/Phải/2 cánh
+- 3 loại khóa
+- số lượng 1-12
+- ngày đặt/ngày giao khác nhau
+- trạng thái:
+  + 115 Mới
+  + 40 Đã lên kế hoạch
+  + 30 Đang sản xuất
+  + 15 Hoàn thành
+
+=================================================
+CÁCH CHẠY HIỆN TẠI
+=================================================
+
+Do Supabase CLI trên máy đang lỗi "failed to get api keys: SchemaError":
+
+1. Vào Supabase Dashboard.
+2. SQL Editor -> New query.
+3. Mở file:
+   supabase/migrations/202608070002_seed_200_demo_orders.sql
+4. Copy toàn bộ SQL.
+5. Bấm Run.
+
+Cuối script sẽ trả thống kê 200 đơn demo.
+
+=================================================
+CMD SAU KHI CHẠY SQL
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm run dev
+
+Mở:
+http://localhost:3000/orders
+
+Nếu OK:
+
+Ctrl + C
+npm run build
+
+git add .
+git commit -m "Add 200 demo steel door orders seed"
+git push
+
+=================================================
+NẾU SUPABASE CLI SAU NÀY HOẠT ĐỘNG
+=================================================
+
+npx supabase link --project-ref welbaxamhikjdmocevlb
+npx supabase db push
+
+=================================================
+XÓA RIÊNG 200 DỮ LIỆU DEMO
+=================================================
+
+Nếu muốn xóa sau buổi demo, chạy trong SQL Editor:
+
+delete from public.steel_door_orders
+where ghi_chu like '[DEMO200]%';
+
+Dữ liệu đơn thật khác sẽ không bị xóa.

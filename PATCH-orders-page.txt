@@ -1,0 +1,71 @@
+PATCH app/orders/page.tsx
+
+1. Type trạng thái hiện tại đang cố định:
+
+type OrderStatus =
+  | "Mới"
+  | "Đã lên kế hoạch"
+  | "Đang sản xuất"
+  | "Hoàn thành";
+
+THAY BẰNG:
+
+type OrderStatus = string;
+
+
+2. MasterData state phải có thêm ORDER_STATUS:
+
+const [masterData, setMasterData] = useState<{
+  MODEL: MasterOption[];
+  COLOR: MasterOption[];
+  LOCK: MasterOption[];
+  OPEN_DIRECTION: MasterOption[];
+  ORDER_STATUS: MasterOption[];
+}>({
+  MODEL: [],
+  COLOR: [],
+  LOCK: [],
+  OPEN_DIRECTION: [],
+  ORDER_STATUS: [],
+});
+
+
+3. Trong fallback của loadMasterData thêm:
+
+ORDER_STATUS: [],
+
+
+4. XÓA constant STATUS_OPTIONS cũ.
+
+
+5. Dropdown Trạng thái thay bằng:
+
+<select
+  value={form.trangThai}
+  onChange={(e) =>
+    updateForm("trangThai", e.target.value)
+  }
+  className={inputClass}
+>
+  {masterData.ORDER_STATUS.map((item) => (
+    <option key={item.id} value={item.name}>
+      {item.name}
+    </option>
+  ))}
+</select>
+
+
+6. Filter trạng thái trong Danh sách đơn hàng thay STATUS_OPTIONS bằng:
+
+{masterData.ORDER_STATUS.map((item) => (
+  <option key={item.id} value={item.name}>
+    {item.name}
+  </option>
+))}
+
+
+7. emptyOrder() có thể giữ:
+
+trangThai: "Mới"
+
+vì migration seed sẵn trạng thái "Mới".

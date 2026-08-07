@@ -1,0 +1,17 @@
+PATCH app/configuration/page.tsx
+
+Nếu trang Cấu hình hiện có nút/link:
+
+href="/configuration/catalogs"
+
+hoặc nút:
+
+Danh mục đơn hàng
+
+thì XÓA nút/link đó khỏi trang Cấu hình.
+
+Catalogs giờ là module riêng trên menu chính:
+
+/catalogs
+
+Không thay đổi WO Master / Routing / Luồng đủ bộ.
