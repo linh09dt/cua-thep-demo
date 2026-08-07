@@ -20,29 +20,39 @@ const menuGroups: MenuGroup[] = [
     title: "TỔNG QUAN",
     items: [
       { href: "/", label: "Dashboard điều hành", short: "DB" },
-      { href: "/order-tracking", label: "Theo dõi đơn hàng", short: "TD" },
+    ],
+  },
+  {
+    title: "TRỢ GIÚP",
+    items: [
       { href: "/erp-logic", label: "Logic vận hành ERP", short: "LG" },
+    ],
+  },
+  {
+    title: "ĐƠN HÀNG",
+    items: [
+      { href: "/orders", label: "Tạo đơn hàng", short: "DH" },
+      { href: "/order-tracking", label: "Theo dõi Đơn Hàng", short: "TD" },
     ],
   },
   {
     title: "KẾ HOẠCH SẢN XUẤT",
     items: [
-      { href: "/orders", label: "Đơn hàng", short: "DH" },
       { href: "/production-orders", label: "Lệnh sản xuất", short: "LS" },
       { href: "/dispatch", label: "Điều độ sản xuất", short: "DD" },
-      { href: "/capacity", label: "Năng lực công đoạn", short: "NL" },
-      { href: "/priority", label: "Priority theo WO", short: "PR" },
     ],
   },
   {
-    title: "THỰC THI & BÁO CÁO",
+    title: "THỰC THI VÀ BÁO CÁO",
     items: [
       { href: "/production-report", label: "Báo cáo sản xuất", short: "BC" },
     ],
   },
   {
-    title: "HỆ THỐNG",
+    title: "CẤU HÌNH",
     items: [
+      { href: "/capacity", label: "Năng lực công đoạn", short: "NL" },
+      { href: "/priority", label: "Priority theo WO", short: "PR" },
       { href: "/catalogs", label: "Danh mục", short: "DM" },
       { href: "/configuration", label: "Cấu hình sản xuất", short: "CH" },
     ],
@@ -102,6 +112,7 @@ export default function AppShell({
           {menuGroups.map((group) => (
             <div key={group.title} className="erp-nav-group">
               <div className="erp-nav-title">{group.title}</div>
+
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const active = isActive(pathname, item.href);
@@ -164,6 +175,7 @@ export default function AppShell({
               <span className="erp-live-dot" />
               Hệ thống online
             </div>
+
             <div className="erp-date">
               {new Intl.DateTimeFormat("vi-VN", {
                 day: "2-digit",
@@ -171,6 +183,7 @@ export default function AppShell({
                 year: "numeric",
               }).format(new Date())}
             </div>
+
             <div className="erp-top-avatar">AD</div>
           </div>
         </header>
