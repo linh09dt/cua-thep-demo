@@ -12,20 +12,28 @@ const steps = [
   },
   {
     no: "02",
+    title: "Tạo Lô sản xuất",
+    description:
+      "Kế hoạch gom các đơn có ngày giao và điều kiện sản xuất phù hợp thành Production Lot.",
+    detail:
+      "Lô là tầng cam kết kế hoạch; không thay thế LSX hay Dispatch theo WO.",
+  },
+  {
+    no: "03",
     title: "Tạo lệnh sản xuất",
     description:
       "Mỗi đơn hàng tạo 1 LSX Cha. Từ LSX Cha tự sinh 3 LSX Con: Cánh, Khung, Phào.",
     detail: "Cấu trúc LSX Cha → LSX Con → WO.",
   },
   {
-    no: "03",
+    no: "04",
     title: "Sinh WO theo Routing",
     description:
       "Routing quyết định LSX Con phải đi qua các WO nào. Cánh, Khung, Phào có Routing riêng.",
     detail: "Không hard-code trình tự công đoạn trong đơn hàng.",
   },
   {
-    no: "04",
+    no: "05",
     title: "Capacity theo WO",
     description:
       "Mỗi WO có Capacity hiệu dụng và WIP Min / Target / Max để điều tiết lượng công việc.",
@@ -33,14 +41,14 @@ const steps = [
       "Capacity giới hạn lượng cấp trong ngày; WIP giữ dòng sản xuất không thiếu việc hoặc ùn việc.",
   },
   {
-    no: "05",
+    no: "06",
     title: "Priority theo WO",
     description:
       "Mỗi WO có rule ưu tiên riêng như Ngày giao, Màu, Ngày đặt, Thứ tự WO trước.",
     detail: "Priority quyết định thứ tự công việc trước khi cấp xuống xưởng.",
   },
   {
-    no: "06",
+    no: "07",
     title: "Điều độ sản xuất",
     description:
       "Điều độ tách Cánh / Khung / Phào / Đủ bộ. Auto Dispatch lấy Eligible → WIP → Capacity → Priority → Draft.",
@@ -48,21 +56,21 @@ const steps = [
       "Với Cánh/Khung/Phào, WO sau được Eligible khi Dispatch WO trước đã RELEASED.",
   },
   {
-    no: "07",
+    no: "08",
     title: "Release Dispatch",
     description:
       "Dispatch sau khi Release trở thành danh sách công việc chính thức của xưởng theo ngày và WO.",
     detail: "Chỉ Dispatch Released mới được báo cáo sản xuất.",
   },
   {
-    no: "08",
+    no: "09",
     title: "Báo cáo sản xuất",
     description:
       "Xưởng nhập Good / NG theo Dispatch. Remain = SL Dispatch - Good.",
     detail: "Remain = 0 thì WO hiện tại Completed.",
   },
   {
-    no: "09",
+    no: "10",
     title: "Điều độ gối đầu công đoạn",
     description:
       "Trong 3 nhánh Cánh / Khung / Phào, WO sau được phép điều độ khi Dispatch WO trước đã RELEASED, không chờ hoàn thành toàn bộ.",
@@ -70,21 +78,21 @@ const steps = [
       "WIP Target và Capacity quyết định lượng cấp; Priority quyết định LSX nào đi trước.",
   },
   {
-    no: "10",
+    no: "11",
     title: "Điểm hội tụ đủ bộ",
     description:
       "WO05 Cánh + WO10 Khung + WO13 Phào hoàn thành thì 3 LSX Con Completed và hệ thống xác nhận Đủ bộ.",
     detail: "Đủ bộ mới được mở WO14 Hàn liên kết.",
   },
   {
-    no: "11",
+    no: "12",
     title: "Luồng chung sau đủ bộ",
     description:
       "Hàn liên kết → Vệ sinh trước sơn → Sơn → Dán vân → Lắp ráp/Đóng gói → Nhập kho → Xuất kho.",
     detail: "Từ đây sản phẩm được quản lý theo bộ cửa hoàn chỉnh.",
   },
   {
-    no: "12",
+    no: "13",
     title: "Theo dõi & Dashboard",
     description:
       "Quản lý xem tình trạng từng đơn, tiến độ Cánh/Khung/Phào, Đủ bộ, WO hiện tại, tải Capacity và đơn trễ.",
@@ -116,8 +124,10 @@ export default function ErpLogicPage() {
           </div>
 
           <div className="mt-4 overflow-x-auto">
-            <div className="flex min-w-[1580px] items-center gap-2">
+            <div className="flex min-w-[1710px] items-center gap-2">
               <FlowBox title="Đơn hàng" sub="Web Order" />
+              <Arrow />
+              <FlowBox title="Lô sản xuất" sub="Production Lot" />
               <Arrow />
               <FlowBox title="LSX Cha" sub="1 đơn = 1 LSX" />
               <Arrow />
