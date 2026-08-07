@@ -43,8 +43,8 @@ const menuGroups: MenuGroup[] = [
     title: "KẾ HOẠCH SẢN XUẤT",
     theme: "planning",
     items: [
-      { href: "/production-lots", label: "Lô sản xuất", short: "LO" },
       { href: "/production-orders", label: "Lệnh sản xuất", short: "LS" },
+      { href: "/production-lots", label: "Lô sản xuất", short: "LO" },
       { href: "/dispatch", label: "Điều độ sản xuất", short: "DD" },
     ],
   },
