@@ -1,0 +1,4 @@
+Build chưa chạy trong môi trường đóng gói vì node_modules không được đóng gói.
+Trên máy Windows chạy:
+npm install
+npm run build

@@ -1,0 +1,117 @@
+CỬA THÉP ERP - CÀI ĐẶT WIP THEO CÔNG ĐOẠN
+
+BẢN NÀY CHỈ BỔ SUNG CẤU HÌNH WIP.
+CHƯA THAY ĐỔI ENGINE ĐIỀU ĐỘ.
+
+=================================================
+TAB MỚI
+=================================================
+
+Cấu hình sản xuất
+-> WIP công đoạn
+
+Mỗi WO có:
+
+- WIP Min
+- WIP Target
+- WIP Max
+- Đơn vị
+- Bật/Tắt
+- Ghi chú
+
+Điều kiện:
+
+WIP Min <= WIP Target <= WIP Max
+
+=================================================
+Ý NGHĨA
+=================================================
+
+WIP Min
+= mức tồn giữa công đoạn thấp nhất mong muốn.
+
+WIP Target
+= mức WIP mục tiêu để cấp việc ổn định.
+
+WIP Max
+= mức tối đa không muốn vượt.
+
+Bản này CHƯA dùng các giá trị đó để tính Auto Dispatch.
+
+=================================================
+FILE THAY ĐỔI
+=================================================
+
+app/configuration/page.tsx
+app/api/configuration/production/route.ts
+
+Migration mới:
+supabase/migrations/202608070012_wip_settings.sql
+
+=================================================
+SUPABASE
+=================================================
+
+Supabase Dashboard
+-> SQL Editor
+-> New query
+
+Mở:
+supabase/migrations/202608070012_wip_settings.sql
+
+Copy toàn bộ
+-> Run
+
+=================================================
+CMD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm install
+npm run dev
+
+Mở:
+http://localhost:3000/configuration
+
+Chọn tab:
+WIP công đoạn
+
+=================================================
+TEST
+=================================================
+
+Ví dụ WO03:
+
+WIP Min    = 10
+WIP Target = 30
+WIP Max    = 50
+
+Bấm Lưu.
+
+Refresh trang.
+Giá trị phải giữ nguyên.
+
+=================================================
+BUILD
+=================================================
+
+Ctrl + C
+npm run build
+
+=================================================
+GIT / VERCEL
+=================================================
+
+git add .
+git commit -m "Add WIP settings by operation"
+git push
+
+=================================================
+SUPABASE CLI
+=================================================
+
+Khi CLI hoạt động:
+
+npx supabase link --project-ref welbaxamhikjdmocevlb
+npx supabase db push

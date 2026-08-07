@@ -1,0 +1,47 @@
+CẬP NHẬT MENU ERP
+
+Chỉ sắp xếp lại menu/sidebar, không thay đổi logic hoặc route.
+
+Cấu trúc mới:
+
+TỔNG QUAN
+- Dashboard điều hành
+
+TRỢ GIÚP
+- Logic vận hành ERP
+
+ĐƠN HÀNG
+- Tạo đơn hàng
+- Theo dõi Đơn Hàng
+
+KẾ HOẠCH SẢN XUẤT
+- Lệnh sản xuất
+- Điều độ sản xuất
+
+THỰC THI VÀ BÁO CÁO
+- Báo cáo sản xuất
+
+CẤU HÌNH
+- Năng lực công đoạn
+- Priority theo WO
+- Danh mục
+- Cấu hình sản xuất
+
+FILE SỬA:
+components/app-shell.tsx
+
+Không có migration Supabase mới.
+
+CMD:
+cd /d D:\Projects\cua-thep-demo
+npm install
+npm run dev
+
+BUILD:
+Ctrl + C
+npm run build
+
+GIT:
+git add .
+git commit -m "Reorganize ERP sidebar menu"
+git push

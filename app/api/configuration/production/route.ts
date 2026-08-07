@@ -17,7 +17,12 @@ type SaveRoutingPayload = {
 };
 
 async function loadData() {
-  const [operationsResult, routingsResult, stepsResult] = await Promise.all([
+  const [
+    operationsResult,
+    routingsResult,
+    stepsResult,
+    wipResult,
+  ] = await Promise.all([
     supabaseAdmin
       .from("production_operations")
       .select("*")
@@ -30,14 +35,23 @@ async function loadData() {
       .from("production_routing_steps")
       .select("*")
       .order("sequence_no", { ascending: true }),
+    supabaseAdmin
+      .from("production_wip_settings")
+      .select("*"),
   ]);
 
   if (operationsResult.error) throw operationsResult.error;
   if (routingsResult.error) throw routingsResult.error;
   if (stepsResult.error) throw stepsResult.error;
+  if (wipResult.error) throw wipResult.error;
 
   const operations = operationsResult.data ?? [];
   const steps = stepsResult.data ?? [];
+  const wipRows = wipResult.data ?? [];
+
+  const wipByOperation = new Map(
+    wipRows.map((item) => [item.operation_id, item])
+  );
 
   const routings = (routingsResult.data ?? []).map((routing) => ({
     routingId: routing.routing_id,
@@ -76,6 +90,23 @@ async function loadData() {
       stageType: item.stage_type,
       isActive: item.is_active,
     })),
+    wipSettings: operations.map((item) => {
+      const wip = wipByOperation.get(item.id);
+
+      return {
+        operationId: item.id,
+        woCode: item.wo_code,
+        operationName: item.operation_name,
+        componentScope: item.component_scope,
+        stageType: item.stage_type,
+        wipMin: Number(wip?.wip_min ?? 0),
+        wipTarget: Number(wip?.wip_target ?? 0),
+        wipMax: Number(wip?.wip_max ?? 0),
+        unitName: wip?.unit_name ?? "bộ",
+        isActive: wip?.is_active ?? true,
+        note: wip?.note ?? "",
+      };
+    }),
     routings,
   };
 }
@@ -160,6 +191,63 @@ export async function POST(request: Request) {
         .from("production_operations")
         .delete()
         .eq("id", id);
+
+      if (error) throw error;
+    } else if (action === "save_wip") {
+      const operationId = String(body?.operationId ?? "");
+      const wipMin = Number(body?.wipMin ?? 0);
+      const wipTarget = Number(body?.wipTarget ?? 0);
+      const wipMax = Number(body?.wipMax ?? 0);
+      const unitName = String(body?.unitName ?? "bộ").trim() || "bộ";
+      const isActive = body?.isActive !== false;
+      const note = String(body?.note ?? "").trim();
+
+      if (!operationId) {
+        return NextResponse.json(
+          { success: false, message: "Thiếu công đoạn/WO." },
+          { status: 400 }
+        );
+      }
+
+      if (
+        !Number.isFinite(wipMin) ||
+        !Number.isFinite(wipTarget) ||
+        !Number.isFinite(wipMax) ||
+        wipMin < 0 ||
+        wipTarget < 0 ||
+        wipMax < 0
+      ) {
+        return NextResponse.json(
+          { success: false, message: "Giá trị WIP không hợp lệ." },
+          { status: 400 }
+        );
+      }
+
+      if (!(wipMin <= wipTarget && wipTarget <= wipMax)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "WIP phải thỏa: Min ≤ Target ≤ Max.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const { error } = await supabaseAdmin
+        .from("production_wip_settings")
+        .upsert(
+          {
+            operation_id: operationId,
+            wip_min: wipMin,
+            wip_target: wipTarget,
+            wip_max: wipMax,
+            unit_name: unitName,
+            is_active: Boolean(isActive),
+            note: note || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "operation_id" }
+        );
 
       if (error) throw error;
     } else if (action === "save_routing") {

@@ -25,6 +25,20 @@ type RoutingStep = {
   componentScope: string;
 };
 
+type WipSetting = {
+  operationId: string;
+  woCode: string;
+  operationName: string;
+  componentScope: string;
+  stageType: StageType;
+  wipMin: number;
+  wipTarget: number;
+  wipMax: number;
+  unitName: string;
+  isActive: boolean;
+  note: string;
+};
+
 type Routing = {
   routingId: string;
   routingName: string;
@@ -48,7 +62,10 @@ const EMPTY_OPERATION: Omit<Operation, "id"> = {
 export default function ConfigurationPage() {
   const [operations, setOperations] = useState<Operation[]>([]);
   const [routings, setRoutings] = useState<Routing[]>([]);
-  const [activeTab, setActiveTab] = useState<"wo" | "routing" | "flow">("wo");
+  const [wipSettings, setWipSettings] = useState<WipSetting[]>([]);
+  const [activeTab, setActiveTab] = useState<
+    "wo" | "routing" | "wip" | "flow"
+  >("wo");
 
   const [operationForm, setOperationForm] =
     useState<Omit<Operation, "id"> & { id?: string }>(EMPTY_OPERATION);
@@ -80,6 +97,7 @@ export default function ConfigurationPage() {
 
       setOperations(result.operations ?? []);
       setRoutings(result.routings ?? []);
+      setWipSettings(result.wipSettings ?? []);
     } catch (error) {
       showMessage(
         error instanceof Error ? error.message : "Không thể tải cấu hình.",
@@ -123,6 +141,7 @@ export default function ConfigurationPage() {
 
       setOperations(result.operations ?? []);
       setRoutings(result.routings ?? []);
+      setWipSettings(result.wipSettings ?? []);
       setOperationForm(EMPTY_OPERATION);
       showMessage("Đã lưu WO/Công đoạn.", "success");
     } catch (error) {
@@ -172,6 +191,7 @@ export default function ConfigurationPage() {
 
       setOperations(result.operations ?? []);
       setRoutings(result.routings ?? []);
+      setWipSettings(result.wipSettings ?? []);
       showMessage("Đã xóa WO/Công đoạn.", "success");
     } catch (error) {
       showMessage(
@@ -205,6 +225,7 @@ export default function ConfigurationPage() {
 
       setOperations(result.operations ?? []);
       setRoutings(result.routings ?? []);
+      setWipSettings(result.wipSettings ?? []);
       showMessage(`Đã cập nhật ${routingId}.`, "success");
     } catch (error) {
       showMessage(
@@ -214,6 +235,72 @@ export default function ConfigurationPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+
+  async function saveWip(setting: WipSetting) {
+    setSaving(true);
+
+    try {
+      const response = await fetch("/api/configuration/production", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "save_wip",
+          operationId: setting.operationId,
+          wipMin: setting.wipMin,
+          wipTarget: setting.wipTarget,
+          wipMax: setting.wipMax,
+          unitName: setting.unitName,
+          isActive: setting.isActive,
+          note: setting.note,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Không thể lưu WIP.");
+      }
+
+      setOperations(result.operations ?? []);
+      setRoutings(result.routings ?? []);
+      setWipSettings(result.wipSettings ?? []);
+      showMessage(
+        `Đã lưu WIP ${setting.woCode} - ${setting.operationName}.`,
+        "success"
+      );
+    } catch (error) {
+      showMessage(
+        error instanceof Error ? error.message : "Không thể lưu WIP.",
+        "error"
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function updateWip(
+    operationId: string,
+    field:
+      | "wipMin"
+      | "wipTarget"
+      | "wipMax"
+      | "unitName"
+      | "isActive"
+      | "note",
+    value: string | number | boolean
+  ) {
+    setWipSettings((current) =>
+      current.map((item) =>
+        item.operationId === operationId
+          ? { ...item, [field]: value }
+          : item
+      )
+    );
+    setMessage("");
   }
 
   const branchCount = useMemo(
@@ -272,6 +359,12 @@ export default function ConfigurationPage() {
             onClick={() => setActiveTab("routing")}
           >
             Routing
+          </TabButton>
+          <TabButton
+            active={activeTab === "wip"}
+            onClick={() => setActiveTab("wip")}
+          >
+            WIP công đoạn
           </TabButton>
           <TabButton
             active={activeTab === "flow"}
@@ -490,6 +583,159 @@ export default function ConfigurationPage() {
                 onSave={saveRouting}
               />
             ))}
+          </section>
+        )}
+
+        {activeTab === "wip" && (
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+              <h2 className="font-bold text-slate-900">
+                Cài đặt WIP theo từng công đoạn
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Thiết lập lượng WIP tối thiểu, mục tiêu và tối đa cho từng WO.
+                Bản này chỉ lưu cấu hình; chưa tự động thay đổi logic Điều độ.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-[1250px] w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-slate-900 text-white">
+                    <Th>WO</Th>
+                    <Th>Công đoạn</Th>
+                    <Th>Phạm vi</Th>
+                    <Th>WIP Min</Th>
+                    <Th>WIP Target</Th>
+                    <Th>WIP Max</Th>
+                    <Th>Đơn vị</Th>
+                    <Th>Hoạt động</Th>
+                    <Th>Ghi chú</Th>
+                    <Th>Lưu</Th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {wipSettings.map((item) => (
+                    <tr
+                      key={item.operationId}
+                      className="border-t border-slate-200 hover:bg-slate-50"
+                    >
+                      <Td strong>{item.woCode}</Td>
+                      <Td>{item.operationName}</Td>
+                      <Td center>{item.componentScope}</Td>
+
+                      <Td center>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.wipMin}
+                          onChange={(e) =>
+                            updateWip(
+                              item.operationId,
+                              "wipMin",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={wipNumberClass}
+                        />
+                      </Td>
+
+                      <Td center>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.wipTarget}
+                          onChange={(e) =>
+                            updateWip(
+                              item.operationId,
+                              "wipTarget",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={wipNumberClass}
+                        />
+                      </Td>
+
+                      <Td center>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.wipMax}
+                          onChange={(e) =>
+                            updateWip(
+                              item.operationId,
+                              "wipMax",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={wipNumberClass}
+                        />
+                      </Td>
+
+                      <Td center>
+                        <input
+                          value={item.unitName}
+                          onChange={(e) =>
+                            updateWip(
+                              item.operationId,
+                              "unitName",
+                              e.target.value
+                            )
+                          }
+                          className="h-9 w-[80px] rounded-md border border-slate-300 bg-white px-2 text-center text-sm"
+                        />
+                      </Td>
+
+                      <Td center>
+                        <input
+                          type="checkbox"
+                          checked={item.isActive}
+                          onChange={(e) =>
+                            updateWip(
+                              item.operationId,
+                              "isActive",
+                              e.target.checked
+                            )
+                          }
+                        />
+                      </Td>
+
+                      <Td>
+                        <input
+                          value={item.note}
+                          onChange={(e) =>
+                            updateWip(
+                              item.operationId,
+                              "note",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Ghi chú WIP"
+                          className="h-9 min-w-[220px] w-full rounded-md border border-slate-300 bg-white px-2 text-sm"
+                        />
+                      </Td>
+
+                      <Td center>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => saveWip(item)}
+                          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+                        >
+                          Lưu
+                        </button>
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="border-t border-slate-200 bg-slate-50 px-5 py-4 text-xs text-slate-600">
+              Quy tắc kiểm tra dữ liệu:{" "}
+              <strong>WIP Min ≤ WIP Target ≤ WIP Max</strong>.
+            </div>
           </section>
         )}
 
