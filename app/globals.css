@@ -418,3 +418,68 @@ textarea {
     display: none;
   }
 }
+
+
+/* ===== SIDEBAR COLOR GROUPS - DASHBOARD ERP ===== */
+.erp-nav-overview .erp-nav-item {
+  background: rgba(30, 110, 225, .10);
+}
+.erp-nav-overview .erp-nav-item.is-active {
+  background: #1878e8;
+}
+
+.erp-nav-help .erp-nav-item {
+  background: rgba(126, 63, 201, .18);
+}
+.erp-nav-help .erp-nav-item.is-active {
+  background: #7135bd;
+}
+
+.erp-nav-orders .erp-nav-item {
+  background: rgba(22, 158, 81, .16);
+}
+.erp-nav-orders .erp-nav-item:hover,
+.erp-nav-orders .erp-nav-item.is-active {
+  background: #15924f;
+}
+
+.erp-nav-planning .erp-nav-item {
+  background: rgba(239, 123, 12, .18);
+}
+.erp-nav-planning .erp-nav-item:hover,
+.erp-nav-planning .erp-nav-item.is-active {
+  background: #ed7308;
+}
+
+.erp-nav-report .erp-nav-item {
+  background: rgba(18, 158, 174, .18);
+}
+.erp-nav-report .erp-nav-item:hover,
+.erp-nav-report .erp-nav-item.is-active {
+  background: #1596a3;
+}
+
+.erp-nav-config .erp-nav-item {
+  background: rgba(53, 100, 190, .18);
+}
+.erp-nav-config .erp-nav-item:hover,
+.erp-nav-config .erp-nav-item.is-active {
+  background: #315fb4;
+}
+
+.erp-nav-group .erp-nav-item {
+  margin-bottom: 4px;
+  color: #f1f5f9;
+}
+
+.dashboard-page {
+  background: #f6f8fb;
+}
+
+.dashboard-page section {
+  border-radius: 10px !important;
+}
+
+.dashboard-page table thead tr {
+  background: #f7f9fc !important;
+}

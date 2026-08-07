@@ -12,24 +12,28 @@ type MenuItem = {
 
 type MenuGroup = {
   title: string;
+  theme: string;
   items: MenuItem[];
 };
 
 const menuGroups: MenuGroup[] = [
   {
     title: "TỔNG QUAN",
+    theme: "overview",
     items: [
       { href: "/", label: "Dashboard điều hành", short: "DB" },
     ],
   },
   {
     title: "TRỢ GIÚP",
+    theme: "help",
     items: [
       { href: "/erp-logic", label: "Logic vận hành ERP", short: "LG" },
     ],
   },
   {
     title: "ĐƠN HÀNG",
+    theme: "orders",
     items: [
       { href: "/orders", label: "Tạo đơn hàng", short: "DH" },
       { href: "/order-tracking", label: "Theo dõi Đơn Hàng", short: "TD" },
@@ -37,6 +41,7 @@ const menuGroups: MenuGroup[] = [
   },
   {
     title: "KẾ HOẠCH SẢN XUẤT",
+    theme: "planning",
     items: [
       { href: "/production-orders", label: "Lệnh sản xuất", short: "LS" },
       { href: "/dispatch", label: "Điều độ sản xuất", short: "DD" },
@@ -44,12 +49,14 @@ const menuGroups: MenuGroup[] = [
   },
   {
     title: "THỰC THI VÀ BÁO CÁO",
+    theme: "report",
     items: [
       { href: "/production-report", label: "Báo cáo sản xuất", short: "BC" },
     ],
   },
   {
     title: "CẤU HÌNH",
+    theme: "config",
     items: [
       { href: "/capacity", label: "Năng lực công đoạn", short: "NL" },
       { href: "/priority", label: "Priority theo WO", short: "PR" },
@@ -93,10 +100,10 @@ export default function AppShell({
 
       <aside className={`erp-sidebar ${mobileOpen ? "is-open" : ""}`}>
         <div className="erp-brand">
-          <div className="erp-brand-mark">S</div>
+          <div className="erp-brand-mark">↗</div>
           <div className="min-w-0">
-            <div className="erp-brand-name">STEEL ERP</div>
-            <div className="erp-brand-sub">Production Management</div>
+            <div className="erp-brand-name">ERP</div>
+            <div className="erp-brand-sub">Quản lý & kế hoạch sản xuất</div>
           </div>
         </div>
 
@@ -110,7 +117,7 @@ export default function AppShell({
 
         <nav className="erp-nav">
           {menuGroups.map((group) => (
-            <div key={group.title} className="erp-nav-group">
+            <div key={group.title} className={`erp-nav-group erp-nav-${group.theme}`}>
               <div className="erp-nav-title">{group.title}</div>
 
               <div className="space-y-1">

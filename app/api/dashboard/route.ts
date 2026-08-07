@@ -10,6 +10,12 @@ function dateKey(value?: string | null) {
   return value ? String(value).slice(0, 10) : "";
 }
 
+function daysBetween(from: string, to: string) {
+  const a = new Date(`${from}T00:00:00`).getTime();
+  const b = new Date(`${to}T00:00:00`).getTime();
+  return Math.round((b - a) / 86400000);
+}
+
 export async function GET() {
   try {
     const [
@@ -21,7 +27,10 @@ export async function GET() {
     ] = await Promise.all([
       supabaseAdmin
         .from("steel_door_orders")
-        .select("id, don_hang, ngay_giao, so_luong, trang_thai, created_at"),
+        .select(
+          "id, don_hang, dai_ly, ngay_dat, ngay_giao, so_luong, trang_thai, model, mau, ghi_chu, created_at"
+        )
+        .order("ngay_giao", { ascending: true }),
 
       supabaseAdmin
         .from("production_orders")
@@ -82,12 +91,22 @@ export async function GET() {
     let fullSetCount = 0;
     let lateCount = 0;
 
-    const statusMap = new Map<string, number>();
+    let qtyNew = 0;
+    let qtyPlanned = 0;
+    let qtyRunning = 0;
+    let qtyCompleted = 0;
 
-    const dueDateMap = new Map<string, number>();
+    const statusMap = new Map<string, number>();
+    const dueDateMap = new Map<
+      string,
+      { quantity: number; orderCount: number }
+    >();
+
+    const attentionOrders: any[] = [];
 
     for (const order of orders) {
-      totalQty += Number(order.so_luong ?? 0);
+      const qty = Number(order.so_luong ?? 0);
+      totalQty += qty;
 
       const list = productionByOrder.get(order.id) ?? [];
       const root = rootByOrder.get(order.id);
@@ -114,10 +133,10 @@ export async function GET() {
           x.status === "COMPLETED"
       );
 
-      let derivedStatus = order.trang_thai ?? "Mới";
+      let derivedStatus = order.trang_thai ?? "Mới / Chưa LSX";
 
       if (!root) {
-        derivedStatus = order.trang_thai ?? "Mới";
+        derivedStatus = "Mới / Chưa LSX";
       } else if (root.status === "COMPLETED") {
         derivedStatus = "Hoàn thành";
       } else if (hasActivity) {
@@ -131,24 +150,61 @@ export async function GET() {
         (statusMap.get(derivedStatus) ?? 0) + 1
       );
 
-      if (!root || derivedStatus === "Mới") newCount++;
-      else if (derivedStatus === "Đã lên kế hoạch") plannedCount++;
-      else if (derivedStatus === "Đang sản xuất") runningCount++;
-      else if (derivedStatus === "Hoàn thành") completedCount++;
+      if (derivedStatus === "Mới / Chưa LSX") {
+        newCount++;
+        qtyNew += qty;
+      } else if (derivedStatus === "Đã lên kế hoạch") {
+        plannedCount++;
+        qtyPlanned += qty;
+      } else if (derivedStatus === "Đang sản xuất") {
+        runningCount++;
+        qtyRunning += qty;
+      } else if (derivedStatus === "Hoàn thành") {
+        completedCount++;
+        qtyCompleted += qty;
+      }
 
       const due = dateKey(order.ngay_giao);
       if (due) {
-        dueDateMap.set(due, (dueDateMap.get(due) ?? 0) + Number(order.so_luong ?? 0));
+        const current = dueDateMap.get(due) ?? {
+          quantity: 0,
+          orderCount: 0,
+        };
+        current.quantity += qty;
+        current.orderCount += 1;
+        dueDateMap.set(due, current);
 
-        if (due < today && derivedStatus !== "Hoàn thành") {
+        const days = daysBetween(today, due);
+        const isLate = days < 0 && derivedStatus !== "Hoàn thành";
+
+        if (isLate) {
           lateCount++;
+        }
+
+        if (
+          derivedStatus !== "Hoàn thành" &&
+          (isLate || days <= 5 || !root)
+        ) {
+          attentionOrders.push({
+            orderNo: order.don_hang ?? "",
+            dealer: order.dai_ly ?? "",
+            dueDate: due,
+            status: isLate ? "Trễ hạn" : derivedStatus,
+            note: !root
+              ? "Chưa tạo LSX"
+              : fullSetReady
+              ? "Sẵn sàng WO14"
+              : order.ghi_chu || "Theo dõi tiến độ",
+            warning: isLate
+              ? `Trễ ${Math.abs(days)} ngày`
+              : days === 0
+              ? "Giao hôm nay"
+              : `Còn ${days} ngày`,
+            days,
+          });
         }
       }
     }
-
-    const operationMap = new Map(
-      operations.map((x) => [x.id, x])
-    );
 
     const capacityMap = new Map(
       capacities
@@ -226,11 +282,18 @@ export async function GET() {
 
     const dueChart = [...dueDateMap.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(0, 14)
-      .map(([date, quantity]) => ({
+      .filter(([date]) => date >= today)
+      .slice(0, 10)
+      .map(([date, value]) => ({
         date,
-        quantity,
+        quantity: value.quantity,
+        orderCount: value.orderCount,
       }));
+
+    const overallPercent =
+      totalQty > 0
+        ? Math.round((qtyCompleted / totalQty) * 100)
+        : 0;
 
     return NextResponse.json({
       success: true,
@@ -244,10 +307,24 @@ export async function GET() {
         completedOrders: completedCount,
         lateOrders: lateCount,
       },
-      statusChart: [...statusMap.entries()].map(([status, count]) => ({
-        status,
-        count,
-      })),
+      statusChart: [
+        {
+          status: "Mới / Chưa LSX",
+          count: statusMap.get("Mới / Chưa LSX") ?? 0,
+        },
+        {
+          status: "Đã lên kế hoạch",
+          count: statusMap.get("Đã lên kế hoạch") ?? 0,
+        },
+        {
+          status: "Đang sản xuất",
+          count: statusMap.get("Đang sản xuất") ?? 0,
+        },
+        {
+          status: "Hoàn thành",
+          count: statusMap.get("Hoàn thành") ?? 0,
+        },
+      ],
       branchChart: [
         branchProgress("CÁNH"),
         branchProgress("KHUNG"),
@@ -255,6 +332,47 @@ export async function GET() {
       ],
       capacityChart,
       dueChart,
+      attentionOrders: attentionOrders
+        .sort((a, b) => a.days - b.days)
+        .slice(0, 5),
+      overallProgress: {
+        percent: overallPercent,
+        totalQty,
+        rows: [
+          {
+            status: "Hoàn thành",
+            quantity: qtyCompleted,
+            percent:
+              totalQty > 0
+                ? Math.round((qtyCompleted / totalQty) * 100)
+                : 0,
+          },
+          {
+            status: "Đang sản xuất",
+            quantity: qtyRunning,
+            percent:
+              totalQty > 0
+                ? Math.round((qtyRunning / totalQty) * 100)
+                : 0,
+          },
+          {
+            status: "Đã lên kế hoạch",
+            quantity: qtyPlanned,
+            percent:
+              totalQty > 0
+                ? Math.round((qtyPlanned / totalQty) * 100)
+                : 0,
+          },
+          {
+            status: "Mới / Chưa LSX",
+            quantity: qtyNew,
+            percent:
+              totalQty > 0
+                ? Math.round((qtyNew / totalQty) * 100)
+                : 0,
+          },
+        ],
+      },
     });
   } catch (error) {
     return NextResponse.json(
