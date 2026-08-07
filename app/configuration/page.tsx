@@ -64,7 +64,7 @@ export default function ConfigurationPage() {
   const [routings, setRoutings] = useState<Routing[]>([]);
   const [wipSettings, setWipSettings] = useState<WipSetting[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "wo" | "routing" | "wip" | "flow"
+    "wo" | "routing" | "wip" | "flow" | "reset"
   >("wo");
 
   const [operationForm, setOperationForm] =
@@ -76,6 +76,12 @@ export default function ConfigurationPage() {
   >("info");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetConfirmation, setResetConfirmation] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<Record<
+    string,
+    number | boolean
+  > | null>(null);
 
   useEffect(() => {
     loadData();
@@ -303,6 +309,67 @@ export default function ConfigurationPage() {
     setMessage("");
   }
 
+
+  async function resetDemoData() {
+    if (resetConfirmation !== "RESET") {
+      showMessage(
+        'Nhập chính xác "RESET" để xác nhận.',
+        "error"
+      );
+      return;
+    }
+
+    const ok = window.confirm(
+      "Xác nhận reset toàn bộ Lô, LSX/WO, Dispatch và Báo cáo? Hệ thống chỉ giữ lại đúng 200 đơn hàng và toàn bộ cấu hình."
+    );
+
+    if (!ok) return;
+
+    setResetting(true);
+    setResetResult(null);
+
+    try {
+      const response = await fetch(
+        "/api/configuration/reset",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            confirmation: resetConfirmation,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || "Không thể reset dữ liệu."
+        );
+      }
+
+      setResetResult(result.result ?? null);
+      setResetConfirmation("");
+      showMessage(
+        "Đã reset dữ liệu. Hệ thống giữ lại đúng 200 đơn hàng và toàn bộ cấu hình.",
+        "success"
+      );
+
+      await loadData();
+    } catch (error) {
+      showMessage(
+        error instanceof Error
+          ? error.message
+          : "Không thể reset dữ liệu.",
+        "error"
+      );
+    } finally {
+      setResetting(false);
+    }
+  }
+
   const branchCount = useMemo(
     () => operations.filter((item) => item.stageType === "BRANCH").length,
     [operations]
@@ -371,6 +438,12 @@ export default function ConfigurationPage() {
             onClick={() => setActiveTab("flow")}
           >
             Luồng đủ bộ
+          </TabButton>
+          <TabButton
+            active={activeTab === "reset"}
+            onClick={() => setActiveTab("reset")}
+          >
+            Reset dữ liệu
           </TabButton>
         </div>
 
@@ -741,6 +814,125 @@ export default function ConfigurationPage() {
 
         {activeTab === "flow" && (
           <ProductionFlow routings={routings} />
+        )}
+
+        {activeTab === "reset" && (
+          <section className="rounded-2xl border border-red-200 bg-white shadow-sm">
+            <div className="border-b border-red-100 bg-red-50 px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-red-600">
+                Khu vực nguy hiểm
+              </p>
+              <h2 className="mt-1 text-lg font-bold text-slate-900">
+                Reset dữ liệu demo
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Xóa toàn bộ dữ liệu phát sinh để bắt đầu demo lại từ đầu,
+                nhưng giữ lại đúng 200 đơn hàng và toàn bộ cấu hình hệ thống.
+              </p>
+            </div>
+
+            <div className="grid gap-5 p-5 xl:grid-cols-2">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <h3 className="font-bold text-emerald-800">
+                  Dữ liệu được giữ lại
+                </h3>
+
+                <div className="mt-3 space-y-2 text-sm text-emerald-800">
+                  <div>✓ Đúng 200 đơn hàng</div>
+                  <div>✓ Danh mục Model / Màu / Khóa / Hướng mở</div>
+                  <div>✓ WO Master và Routing</div>
+                  <div>✓ Capacity công đoạn</div>
+                  <div>✓ Priority theo WO</div>
+                  <div>✓ WIP Min / Target / Max</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                <h3 className="font-bold text-red-800">
+                  Dữ liệu sẽ bị xóa
+                </h3>
+
+                <div className="mt-3 space-y-2 text-sm text-red-800">
+                  <div>× Lô sản xuất</div>
+                  <div>× LSX Cha / LSX Con / WO phát sinh</div>
+                  <div>× Dispatch Draft / Released</div>
+                  <div>× Báo cáo Good / NG</div>
+                  <div>× Toàn bộ tiến độ sản xuất phát sinh</div>
+                  <div>× Các đơn ngoài 200 đơn được giữ</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 p-5">
+              <div className="max-w-xl">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-bold text-slate-800">
+                    Nhập RESET để xác nhận
+                  </span>
+
+                  <input
+                    value={resetConfirmation}
+                    onChange={(e) =>
+                      setResetConfirmation(e.target.value)
+                    }
+                    placeholder="RESET"
+                    autoComplete="off"
+                    className="h-11 w-full rounded-lg border border-red-300 bg-white px-3 font-mono text-sm font-bold uppercase text-red-700 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  disabled={
+                    resetting ||
+                    resetConfirmation !== "RESET"
+                  }
+                  onClick={resetDemoData}
+                  className="mt-4 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {resetting
+                    ? "Đang reset..."
+                    : "RESET DỮ LIỆU DEMO"}
+                </button>
+
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  200 đơn được ưu tiên giữ là các đơn có nhãn [DEMO200].
+                  Nếu chưa đủ 200, hệ thống tự lấy thêm các đơn cũ nhất.
+                  Sau reset, các đơn giữ lại được đưa về trạng thái Mới.
+                </p>
+              </div>
+
+              {resetResult && (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <Summary
+                    title="Đơn trước reset"
+                    value={Number(resetResult.orders_before ?? 0)}
+                  />
+                  <Summary
+                    title="Đơn sau reset"
+                    value={Number(resetResult.orders_after ?? 0)}
+                  />
+                  <Summary
+                    title="LSX/WO đã xóa"
+                    value={Number(
+                      resetResult.deleted_production_orders ?? 0
+                    )}
+                  />
+                  <Summary
+                    title="Dispatch đã xóa"
+                    value={
+                      Number(
+                        resetResult.deleted_dispatch_headers ?? 0
+                      ) +
+                      Number(
+                        resetResult.deleted_dispatch_items ?? 0
+                      )
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          </section>
         )}
       </main>
     </AppShell>
