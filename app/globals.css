@@ -483,3 +483,292 @@ textarea {
 .dashboard-page table thead tr {
   background: #f7f9fc !important;
 }
+
+
+/* ============================================================
+   MOBILE ERP VIEW
+   Chỉ responsive UI. Không thay đổi business logic.
+   ============================================================ */
+
+.erp-mobile-title {
+  display: none;
+}
+
+/* Tablet / small laptop */
+@media (max-width: 1280px) {
+  :root {
+    --erp-sidebar-width: 230px;
+  }
+
+  .erp-content > main {
+    padding: 14px 16px 20px !important;
+  }
+
+  .erp-content .grid {
+    min-width: 0;
+  }
+
+  .erp-content section {
+    min-width: 0;
+  }
+}
+
+/* Mobile + tablet: sidebar drawer */
+@media (max-width: 1100px) {
+  .erp-sidebar {
+    width: min(86vw, 300px);
+    transform: translateX(-105%);
+    transition: transform .22s ease;
+  }
+
+  .erp-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .erp-main {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  .erp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: block;
+    background: rgba(15, 23, 42, .5);
+    backdrop-filter: blur(2px);
+  }
+
+  .erp-mobile-menu {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .erp-topbar {
+    min-height: 58px;
+    padding: 7px 14px;
+  }
+
+  .erp-content > main {
+    padding: 14px !important;
+  }
+
+  /* Các bảng ERP được kéo ngang thay vì bóp cột */
+  .erp-content .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .erp-content table {
+    white-space: nowrap;
+  }
+
+  /* Chart / card không tràn viewport */
+  .erp-content svg {
+    max-width: 100%;
+  }
+
+  .erp-content [class*="min-w-["] {
+    max-width: none;
+  }
+}
+
+/* Phone */
+@media (max-width: 720px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .erp-topbar {
+    min-height: 54px;
+    padding: 6px 10px;
+  }
+
+  .erp-breadcrumb {
+    display: none;
+  }
+
+  .erp-topbar .text-base {
+    display: none;
+  }
+
+  .erp-mobile-title {
+    display: block;
+    max-width: 52vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 800;
+    color: #17365b;
+  }
+
+  .erp-live,
+  .erp-date {
+    display: none !important;
+  }
+
+  .erp-top-actions {
+    margin-left: auto;
+    gap: 6px;
+  }
+
+  .erp-top-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 9px;
+  }
+
+  .erp-mobile-menu {
+    width: 34px;
+    height: 34px;
+  }
+
+  .erp-content > main {
+    padding: 10px !important;
+  }
+
+  .erp-content h1 {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+  }
+
+  .erp-content h2 {
+    line-height: 1.3;
+  }
+
+  /* Form/grid về 1 cột trên điện thoại */
+  .erp-content .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .erp-content .flex-wrap {
+    row-gap: 8px;
+  }
+
+  /* Tabs ngang: cho phép kéo ngang */
+  .erp-content main > div.flex.flex-wrap,
+  .erp-content main > section .flex.flex-wrap {
+    max-width: 100%;
+  }
+
+  .erp-content button,
+  .erp-content a {
+    touch-action: manipulation;
+  }
+
+  .erp-content input,
+  .erp-content select,
+  .erp-content textarea {
+    min-height: 42px;
+    font-size: 16px !important; /* tránh iOS tự zoom */
+  }
+
+  .erp-content input[type="checkbox"] {
+    min-height: auto;
+  }
+
+  /* Button đủ lớn để bấm bằng tay */
+  .erp-content button {
+    min-height: 38px;
+  }
+
+  /* Các bảng luôn nằm trong vùng scroll */
+  .erp-content table {
+    font-size: 11px;
+  }
+
+  .erp-content table th {
+    padding: 8px 9px !important;
+    font-size: 9px !important;
+  }
+
+  .erp-content table td {
+    padding: 8px 9px !important;
+    font-size: 11px !important;
+  }
+
+  /* Modal */
+  .fixed.inset-0 > div {
+    max-height: 94vh !important;
+    width: calc(100vw - 16px) !important;
+    margin: 8px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Dashboard */
+  .dashboard-page {
+    padding: 10px !important;
+  }
+
+  .dashboard-page > div.grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .dashboard-page section {
+    padding: 12px !important;
+  }
+
+  .dashboard-page .recharts-responsive-container {
+    min-height: 250px;
+  }
+
+  /* Summary/card: 2 cột khi đủ rộng */
+  .erp-content .sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Những form thao tác chính vẫn 1 cột */
+  .erp-content form.grid,
+  .erp-content section > .grid.md\:grid-cols-2,
+  .erp-content section > .grid.xl\:grid-cols-\[220px_1fr_auto_auto\],
+  .erp-content section > .grid.xl\:grid-cols-\[220px_1fr_auto\] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .erp-footer {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 9px;
+  }
+
+  .erp-footer span:last-child {
+    display: none;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 430px) {
+  .erp-content > main,
+  .dashboard-page {
+    padding: 8px !important;
+  }
+
+  .erp-content .sm\:grid-cols-2 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .erp-content .rounded-xl,
+  .erp-content .rounded-2xl {
+    border-radius: 7px !important;
+  }
+
+  .erp-mobile-title {
+    max-width: 46vw;
+    font-size: 12px;
+  }
+
+  .erp-brand {
+    min-height: 64px;
+  }
+
+  .erp-nav-item {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .erp-sidebar-footer {
+    position: sticky;
+    bottom: 0;
+  }
+}

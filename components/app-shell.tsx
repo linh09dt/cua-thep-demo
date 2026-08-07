@@ -178,6 +178,9 @@ export default function AppShell({
           </div>
 
           <div className="erp-top-actions">
+            <div className="erp-mobile-title">
+              {title}
+            </div>
             <div className="erp-live">
               <span className="erp-live-dot" />
               Hệ thống online
