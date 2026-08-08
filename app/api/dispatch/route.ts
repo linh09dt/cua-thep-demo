@@ -298,19 +298,13 @@ async function getDispatchMetrics(
   const wipNeedToTarget =
     setting.isActive && setting.wipTarget > 0
       ? Math.max(0, setting.wipTarget - wipCurrent)
-      : capacityRemaining;
+      : 0;
 
-  const overMax =
-    setting.isActive &&
-    setting.wipMax > 0 &&
-    wipCurrent >= setting.wipMax;
-
-  const autoDispatchLimit = overMax
-    ? 0
-    : Math.max(
-        0,
-        Math.min(capacityRemaining, wipNeedToTarget)
-      );
+  // LOGIC MỚI:
+  // Capacity là giới hạn chính của Dispatch.
+  // WIP Min / Target / Max chỉ dùng để theo dõi và cảnh báo dòng WIP,
+  // KHÔNG dùng làm trần Auto Dispatch.
+  const autoDispatchLimit = Math.max(0, capacityRemaining);
 
   return {
     capacity,
@@ -803,8 +797,9 @@ export async function POST(request: Request) {
         const qty = Number(candidate.quantity || 0);
         if (qty <= 0) continue;
 
-        // Không tách LSX. Chỉ lấy dòng nào còn nằm trong
-        // giới hạn nhỏ hơn giữa WIP cần bù và Capacity còn lại.
+        // Không tách LSX.
+        // Chọn theo Priority cho đến giới hạn Capacity còn lại.
+        // WIP không còn là trần Dispatch.
         if (used + qty <= dispatchLimit) {
           selected.push(candidate);
           used += qty;
@@ -886,18 +881,8 @@ export async function POST(request: Request) {
         );
       }
 
-      if (
-        metrics.wipActive &&
-        metrics.wipMax > 0 &&
-        metrics.wipCurrent + used + candidate.quantity >
-          metrics.wipMax
-      ) {
-        throw new Error(
-          `Vượt WIP Max: ${
-            metrics.wipCurrent + used + candidate.quantity
-          }/${metrics.wipMax} ${metrics.unitName}.`
-        );
-      }
+      // WIP Max chỉ cảnh báo, không chặn thao tác thêm LSX.
+      // Capacity còn lại vẫn là giới hạn cứng của Dispatch.
 
       const nextSequence = (currentItems?.[0]?.sequence_no ?? 0) + 10;
 
