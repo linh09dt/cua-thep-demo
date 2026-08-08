@@ -280,14 +280,21 @@ async function getDispatchMetrics(
   operationId: string,
   dispatchDate: string
 ): Promise<DispatchMetrics> {
-  const [capacity, setting, releasedQty, goodQty, releasedToday] =
-    await Promise.all([
-      getCapacity(operationId),
-      getWipSetting(operationId),
-      getReleasedQuantity(operationId),
-      getReportedGood(operationId),
-      getReleasedToday(operationId, dispatchDate),
-    ]);
+  const [
+    capacity,
+    setting,
+    releasedQty,
+    goodQty,
+    releasedToday,
+    operation,
+  ] = await Promise.all([
+    getCapacity(operationId),
+    getWipSetting(operationId),
+    getReleasedQuantity(operationId),
+    getReportedGood(operationId),
+    getReleasedToday(operationId, dispatchDate),
+    getOperation(operationId),
+  ]);
 
   // WIP hiện tại của WO = lượng Dispatch đã RELEASED tại chính WO đó
   // nhưng chưa được báo Good hoàn thành.
@@ -300,11 +307,48 @@ async function getDispatchMetrics(
       ? Math.max(0, setting.wipTarget - wipCurrent)
       : 0;
 
-  // LOGIC MỚI:
-  // Capacity là giới hạn chính của Dispatch.
-  // WIP Min / Target / Max chỉ dùng để theo dõi và cảnh báo dòng WIP,
-  // KHÔNG dùng làm trần Auto Dispatch.
-  const autoDispatchLimit = Math.max(0, capacityRemaining);
+  const firstBranchWo = new Set(["WO01", "WO06", "WO11"]);
+  const branchWo = new Set([
+    "WO01",
+    "WO02",
+    "WO03",
+    "WO04",
+    "WO05",
+    "WO06",
+    "WO07",
+    "WO08",
+    "WO09",
+    "WO10",
+    "WO11",
+    "WO12",
+    "WO13",
+  ]);
+
+  const isBranchOperation = branchWo.has(operation.wo_code);
+  const isFirstBranchOperation = firstBranchWo.has(operation.wo_code);
+
+  // LOGIC ĐIỀU ĐỘ CÁNH / KHUNG / PHÀO:
+  //
+  // WO đầu nhánh: WO01 / WO06 / WO11
+  //   -> dùng toàn bộ Capacity còn lại.
+  //
+  // WO sau trong nhánh:
+  //   -> giữ lại phần thiếu để đạt WIP Target.
+  //   -> phần Capacity còn lại mới dùng cho Auto Dispatch.
+  //
+  // Ví dụ WO02:
+  // Capacity còn lại = 99
+  // WIP hiện tại = 0
+  // WIP Target = 40
+  // => thiếu Target = 40
+  // => Auto Dispatch tối đa = 99 - 40 = 59.
+  //
+  // WO14-WO20 không thuộc phạm vi thay đổi này:
+  // vẫn dùng Capacity còn lại như hiện tại.
+  const autoDispatchLimit =
+    isBranchOperation && !isFirstBranchOperation
+      ? Math.max(0, capacityRemaining - wipNeedToTarget)
+      : Math.max(0, capacityRemaining);
 
   return {
     capacity,
@@ -798,8 +842,9 @@ export async function POST(request: Request) {
         if (qty <= 0) continue;
 
         // Không tách LSX.
-        // Chọn theo Priority cho đến giới hạn Capacity còn lại.
-        // WIP không còn là trần Dispatch.
+        // WO đầu nhánh: chọn theo Priority đến Capacity còn lại.
+        // WO sau Cánh/Khung/Phào: chọn đến phần Capacity sau khi
+        // chừa lượng thiếu để đạt WIP Target.
         if (used + qty <= dispatchLimit) {
           selected.push(candidate);
           used += qty;
