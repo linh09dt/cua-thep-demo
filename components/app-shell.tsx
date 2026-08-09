@@ -109,7 +109,7 @@ export default function AppShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const title = currentTitle(pathname);
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <div className="erp-app">
@@ -127,14 +127,14 @@ export default function AppShell({
           <div className="erp-brand-mark">↗</div>
           <div className="min-w-0">
             <div className="erp-brand-name">ERP</div>
-            <div className="erp-brand-sub">Quản lý & kế hoạch sản xuất</div>
+            <div className="erp-brand-sub">{t("Quản lý & kế hoạch sản xuất")}</div>
           </div>
         </div>
 
         <div className="erp-plant">
           <div>
-            <div className="erp-plant-label">NHÀ MÁY</div>
-            <div className="erp-plant-name">Cửa thép - Demo Plant</div>
+            <div className="erp-plant-label">{t("NHÀ MÁY")}</div>
+            <div className="erp-plant-name">{t("Cửa thép - Demo Plant")}</div>
           </div>
           <span className="erp-status-dot" title="Hệ thống hoạt động" />
         </div>
@@ -142,7 +142,7 @@ export default function AppShell({
         <nav className="erp-nav">
           {menuGroups.map((group) => (
             <div key={group.title} className={`erp-nav-group erp-nav-${group.theme}`}>
-              <div className="erp-nav-title">{group.title}</div>
+              <div className="erp-nav-title">{t(group.title)}</div>
 
               <div className="space-y-1">
                 {group.items.map((item) => {
@@ -156,7 +156,7 @@ export default function AppShell({
                       className={`erp-nav-item ${active ? "is-active" : ""}`}
                     >
                       <span className="erp-nav-icon">{item.short}</span>
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate">{t(item.label)}</span>
                       {active && <span className="erp-nav-active-mark" />}
                     </Link>
                   );
@@ -173,7 +173,7 @@ export default function AppShell({
               Administrator
             </div>
             <div className="truncate text-[11px] text-slate-400">
-              Kế hoạch sản xuất
+              {t("Kế hoạch sản xuất")}
             </div>
           </div>
         </div>
@@ -193,10 +193,10 @@ export default function AppShell({
 
             <div className="min-w-0">
               <div className="erp-breadcrumb">
-                ERP / Quản lý sản xuất
+                {t("ERP / Quản lý sản xuất")}
               </div>
               <div className="truncate text-base font-bold text-slate-800">
-                {title}
+                {t(title)}
               </div>
             </div>
           </div>
@@ -207,11 +207,11 @@ export default function AppShell({
               <button type="button" onClick={() => setLanguage("en")} className={language === "en" ? "is-active" : ""}>EN</button>
             </div>
             <div className="erp-mobile-title">
-              {title}
+              {t(title)}
             </div>
             <div className="erp-live">
               <span className="erp-live-dot" />
-              Hệ thống online
+              {t("Hệ thống online")}
             </div>
 
             <div className="erp-date">

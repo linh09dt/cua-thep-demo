@@ -1,0 +1,32 @@
+FULL ENGLISH - ALL TABS & CARDS
+
+Baseline:
+cua-thep-demo(20260809-231240).zip
+
+CHỈ SỬA:
+1. components/language-provider.tsx
+2. components/app-shell.tsx
+
+THAY ĐỔI:
+- Menu/tab/sidebar/topbar dùng t() trực tiếp, không còn phụ thuộc MutationObserver.
+- Bổ sung semantic phrase translation cho toàn bộ nhóm card/KPI phổ biến.
+- Bổ sung dịch text động từ API: status, đơn vị, Capacity, WIP, Dispatch,
+  Bottleneck, Cánh/Khung/Phào, ngày giao, cảnh báo.
+- Có fallback dictionary để tránh text kiểu nửa Việt/nửa Anh.
+- Đã kiểm tra object exact không còn duplicate key TS1117.
+- Đã kiểm tra toàn bộ 38 menu/tab label đều có translation exact.
+
+KHÔNG ĐỔI:
+- Database
+- Routing
+- LSX/WO
+- Capacity
+- WIP
+- Dispatch
+- Report
+- Planning Engine
+- Business logic
+
+SAU KHI COPY:
+cd /d D:\Projects\cua-thep-demo
+npm run build

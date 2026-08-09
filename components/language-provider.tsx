@@ -1,7 +1,7 @@
 "use client";
 import React,{createContext,useCallback,useContext,useEffect,useMemo,useState}from"react";
 export type AppLanguage="vi"|"en";
-type Ctx={language:AppLanguage;setLanguage:(v:AppLanguage)=>void;toggleLanguage:()=>void};
+type Ctx={language:AppLanguage;setLanguage:(v:AppLanguage)=>void;toggleLanguage:()=>void;t:(value:string)=>string};
 const LanguageContext=createContext<Ctx|null>(null);
 
 const exact:Record<string,string>={
@@ -61,6 +61,67 @@ const exact:Record<string,string>={
   "Carry Over ngày trước":"Previous-day carry over","Chưa hoàn tất":"Incomplete","Hoàn tất hôm nay":"Completed today","Tiến độ tổng thể":"Overall progress",
   "Tiến độ sản xuất":"Production progress","Tải Capacity theo WO hôm nay":"Today's capacity load by WO","Nhu cầu theo ngày giao (10 ngày tới)":"Demand by delivery date (next 10 days)","Đơn hàng cần chú ý":"Orders requiring attention"
 };
+
+const semanticRules:[RegExp,string][]=[
+  [/Tổng hợp tình hình/gi,"Production overview"],[/theo thời gian thực/gi,"in real time"],
+  [/Tổng số đơn hàng/gi,"Total orders"],[/Tổng số lượng/gi,"Total quantity"],[/Tổng nhu cầu/gi,"Total demand"],
+  [/Mới\s*\/\s*Chưa LSX/gi,"New / No Production Order"],[/Đã lên kế hoạch/gi,"Planned"],[/Đang sản xuất/gi,"In Production"],
+  [/Cơ cấu tình trạng/gi,"Status breakdown"],[/Số LSX con/gi,"Child production orders"],[/đã hoàn thành/gi,"completed"],[/theo nhánh/gi,"by branch"],
+  [/NÚT THẮT HÔM NAY/gi,"TODAY'S BOTTLENECK"],[/CAPACITY HIỆU DỤNG/gi,"EFFECTIVE CAPACITY"],[/ĐÃ ĐIỀU ĐỘ/gi,"DISPATCHED"],
+  [/CẦN XỬ LÝ/gi,"ACTION REQUIRED"],[/Cần xử lý/gi,"Action required"],[/Xem tất cả/gi,"View all"],[/Mở Smart Planning/gi,"Open Smart Planning"],
+  [/Capacity hiệu dụng/gi,"Effective capacity"],[/Capacity còn lại/gi,"Remaining capacity"],[/WIP hiện tại/gi,"Current WIP"],
+  [/Thiếu đến Target/gi,"Gap to Target"],[/Đề xuất Auto Dispatch/gi,"Suggested Auto Dispatch"],[/Draft hiện tại/gi,"Current Draft"],
+  [/Carry Over ngày trước/gi,"Previous-day Carry Over"],[/Ngày giao hàng/gi,"Delivery date"],[/Ngày giao/gi,"Delivery date"],
+  [/Ngày sản xuất/gi,"Production date"],[/Ngày kế hoạch/gi,"Plan date"],[/Ngày điều độ/gi,"Dispatch date"],[/Ngày báo cáo/gi,"Report date"],
+  [/Laser Cánh/gi,"Door Leaf Laser Cutting"],[/Laser Khung/gi,"Frame Laser Cutting"],[/Laser Phào/gi,"Trim Laser Cutting"],
+  [/Chấn Cánh/gi,"Door Leaf Bending"],[/Chấn Khung/gi,"Frame Bending"],[/Chấn Phào/gi,"Trim Bending"],
+  [/Hàn Cánh/gi,"Door Leaf Welding"],[/Hàn Khung/gi,"Frame Welding"],[/Hàn Phào/gi,"Trim Welding"],[/Ép Cánh/gi,"Door Leaf Pressing"],
+  [/Vệ sinh trước sơn/gi,"Pre-paint Cleaning"],[/Dán vân/gi,"Wood-grain Lamination"],[/Lắp ráp \/ Đóng gói/gi,"Assembly / Packing"],
+  [/Nhập kho/gi,"Warehouse Receipt"],[/Xuất kho/gi,"Shipping"],[/Không có đơn trễ hạn/gi,"No late orders"],[/Không có lô trễ hạn/gi,"No late lots"],
+  [/Đơn đã hoàn thành/gi,"Completed orders"],[/Tải Capacity theo WO hôm nay/gi,"Today's capacity load by WO"],
+  [/Nhu cầu theo ngày giao \(10 ngày tới\)/gi,"Demand by delivery date (next 10 days)"],[/Đơn hàng cần chú ý/gi,"Orders requiring attention"],
+  [/Lập kế hoạch từng bước/gi,"Step-by-step Planning"],[/Cảnh báo kế hoạch/gi,"Planning Alerts"],[/Kế hoạch 7 ngày/gi,"7-day Plan"],
+  [/Logic vận hành ERP/gi,"ERP Operating Logic"],[/Kịch bản demo/gi,"Demo Scenario"],[/Truy xuất sản xuất/gi,"Production Traceability"],
+  [/Tạo đơn hàng/gi,"Create Order"],[/Theo dõi Đơn Hàng/gi,"Order Tracking"],[/Theo dõi đơn hàng/gi,"Order Tracking"],
+  [/Lệnh sản xuất/gi,"Production Orders"],[/Lô sản xuất/gi,"Production Lots"],[/Sẵn sàng vật tư/gi,"Material Readiness"],
+  [/Sẵn sàng đủ bộ/gi,"Set Readiness"],[/Phân tích nút thắt/gi,"Bottleneck Analysis"],[/Kế hoạch thông minh/gi,"Smart Planning"],
+  [/Bảng lịch sản xuất/gi,"Production Schedule Board"],[/Điều độ sản xuất/gi,"Production Dispatch"],[/Màn hình xưởng/gi,"Shop Floor"],
+  [/Chất lượng \/ Hold/gi,"Quality / Hold"],[/Báo cáo sản xuất/gi,"Production Report"],[/Sẵn sàng giao hàng/gi,"Shipping Readiness"],
+  [/Tổn thất sản xuất/gi,"Production Loss"],[/Năng lực công đoạn/gi,"Operation Capacity"],[/Cấu hình sản xuất/gi,"Production Configuration"],
+  [/Việc cần xử lý/gi,"Action Center"],[/Rủi ro giao hàng/gi,"Delivery Risk"],[/Họp sản xuất đầu ca/gi,"Daily Production Meeting"],
+  [/So sánh phương án/gi,"Scenario Comparison"],[/Quản lý & kế hoạch sản xuất/gi,"Production Management & Planning"],
+  [/ERP \/ Quản lý sản xuất/gi,"ERP / Production Management"],[/Cửa thép - Demo Plant/gi,"Steel Door - Demo Plant"],
+  [/Đại lý/gi,"Dealer"],[/Khách hàng/gi,"Customer"],[/Số đơn hàng/gi,"Order number"],[/Số đơn/gi,"Orders"],
+  [/Tổng đơn/gi,"Total orders"],[/Hiệu dụng/gi,"Effective"],[/Đã điều độ/gi,"Dispatched"],[/Mức tải/gi,"Load"],
+  [/Chưa LSX/gi,"No Production Order"],[/Chưa có LSX/gi,"No Production Order"],[/Chưa tạo LSX/gi,"Production Order not created"],
+  [/Đã tạo LSX/gi,"Production Order created"],[/Chưa tạo Draft/gi,"Draft not created"],[/Chưa Release/gi,"Not released"],[/Đã Release/gi,"Released"],
+  [/Thiếu WIP/gi,"Low WIP"],[/Vượt WIP/gi,"WIP above maximum"],[/Trong giới hạn/gi,"Within limits"],[/Đủ điều kiện/gi,"Eligible"],
+  [/Không đủ điều kiện/gi,"Not eligible"],[/Điểm hội tụ/gi,"Merge point"],[/Luồng đủ bộ/gi,"Complete-set flow"],[/Nhánh riêng/gi,"Independent branch"],
+  [/Chưa báo cáo/gi,"Not reported"],[/Đã báo cáo/gi,"Reported"],[/Còn dư/gi,"Remaining"],[/Chuyển ngày sau/gi,"Carry over to next day"],
+  [/Chưa hoàn tất/gi,"Incomplete"],[/Hoàn tất hôm nay/gi,"Completed today"],[/Tiến độ tổng thể/gi,"Overall progress"],[/Tiến độ sản xuất/gi,"Production progress"]
+];
+
+const fallbackWords:[RegExp,string][]=[
+  [/Không thể tải/gi,"Unable to load"],[/Không tải được/gi,"Unable to load"],[/Không thể lưu/gi,"Unable to save"],[/Không thể cập nhật/gi,"Unable to update"],
+  [/Không thể tạo/gi,"Unable to create"],[/Không thể xóa/gi,"Unable to delete"],[/Không thể xử lý/gi,"Unable to process"],[/Không thể/gi,"Unable to"],
+  [/Không có dữ liệu/gi,"No data"],[/Chưa có dữ liệu/gi,"No data yet"],[/Chưa vào lô/gi,"Not assigned to lot"],[/Chưa hoàn thành/gi,"Not completed"],
+  [/Chưa xác nhận/gi,"Not confirmed"],[/đơn hàng/gi,"orders"],[/Đơn hàng/g,"Orders"],[/công đoạn/gi,"operation"],[/Công đoạn/g,"Operation"],
+  [/năng lực/gi,"capacity"],[/Năng lực/g,"Capacity"],[/vật tư/gi,"material"],[/Vật tư/g,"Material"],[/chất lượng/gi,"quality"],[/Chất lượng/g,"Quality"],
+  [/sản xuất/gi,"production"],[/Sản xuất/g,"Production"],[/kế hoạch/gi,"plan"],[/Kế hoạch/g,"Plan"],[/điều độ/gi,"dispatch"],[/Điều độ/g,"Dispatch"],
+  [/báo cáo/gi,"report"],[/Báo cáo/g,"Report"],[/sẵn sàng/gi,"ready"],[/Sẵn sàng/g,"Ready"],[/cảnh báo/gi,"alert"],[/Cảnh báo/g,"Alert"],
+  [/rủi ro/gi,"risk"],[/Rủi ro/g,"Risk"],[/quá tải/gi,"overload"],[/Quá tải/g,"Overload"],[/nút thắt/gi,"bottleneck"],[/Nút thắt/g,"Bottleneck"],
+  [/trạng thái/gi,"status"],[/Trạng thái/g,"Status"],[/số lượng/gi,"quantity"],[/Số lượng/g,"Quantity"],[/ưu tiên/gi,"priority"],[/Ưu tiên/g,"Priority"],
+  [/hoàn thành/gi,"completed"],[/Hoàn thành/g,"Completed"],[/đang chạy/gi,"running"],[/Đang chạy/g,"Running"],[/đang chờ/gi,"waiting"],[/Đang chờ/g,"Waiting"],
+  [/thiếu/gi,"shortage"],[/Thiếu/g,"Shortage"],[/trễ hạn/gi,"late"],[/Trễ hạn/g,"Late"],[/hôm nay/gi,"today"],[/Hôm nay/g,"Today"],
+  [/hôm qua/gi,"yesterday"],[/Hôm qua/g,"Yesterday"],[/ngày mai/gi,"tomorrow"],[/Ngày mai/g,"Tomorrow"],[/theo lô/gi,"by lot"],[/theo ngày/gi,"by date"],
+  [/theo WO/gi,"by WO"],[/theo nhánh/gi,"by branch"],[/Tổng số/gi,"Total"],[/Tổng/gi,"Total"],[/Xem chi tiết/gi,"View details"],[/Mở màn hình/gi,"Open screen"],
+  [/Tìm kiếm/gi,"Search"],[/Tìm/gi,"Search"],[/Làm mới/gi,"Refresh"],[/Cập nhật/gi,"Update"],[/Thêm mới/gi,"Add new"],[/Tạo mới/gi,"Create"],
+  [/Tạo/gi,"Create"],[/Xóa/gi,"Delete"],[/Lưu/gi,"Save"],[/Hủy/gi,"Cancel"],[/Thêm/gi,"Add"],[/Sửa/gi,"Edit"],[/Quay lại/gi,"Back"],[/Tiếp tục/gi,"Continue"],
+  [/Chi tiết/gi,"Details"],[/Ghi chú/gi,"Notes"],[/Ngày/gi,"Date"],[/Màu/gi,"Color"],[/Nhánh/gi,"Branch"],[/Cánh/gi,"Door Leaf"],[/Khung/gi,"Frame"],[/Phào/gi,"Trim"],
+  [/Đủ bộ/gi,"Complete Set"],[/Bộ cửa/gi,"Door Set"],[/Giao hàng/gi,"Shipping"],[/Đóng gói/gi,"Packing"],[/Tất cả/gi,"All"],[/Xác nhận/gi,"Confirm"],[/Áp dụng/gi,"Apply"],
+  [/bộ\b/gi,"sets"],[/ngày\b/gi,"days"],[/đơn\b/gi,"orders"]
+];
+
 const rules:[RegExp,string][]=[
 [/trễ hạn/gi,"late"],[/cần xử lý/gi,"action required"],[/chưa LSX/gi,"no production order"],
 [/tổng hợp tình hình/gi,"overview"],[/theo thời gian thực/gi,"in real time"],
@@ -78,8 +139,8 @@ const rules:[RegExp,string][]=[
 
 [/Không tải được/gi,"Unable to load"],[/Không thể tải/gi,"Unable to load"],[/Không thể/gi,"Unable to"],[/Không có dữ liệu/gi,"No data"],[/Chưa có dữ liệu/gi,"No data yet"],[/Chưa tạo/gi,"Not created"],[/Chưa vào lô/gi,"Not assigned to lot"],[/Chưa hoàn thành/gi,"Not completed"],[/đơn hàng/gi,"orders"],[/Đơn hàng/g,"Orders"],[/lệnh sản xuất/gi,"production orders"],[/Lệnh sản xuất/g,"Production Orders"],[/lô sản xuất/gi,"production lots"],[/Lô sản xuất/g,"Production Lots"],[/ngày giao/gi,"delivery date"],[/Ngày giao/g,"Delivery Date"],[/ngày sản xuất/gi,"production date"],[/Ngày sản xuất/g,"Production Date"],[/kế hoạch/gi,"plan"],[/Kế hoạch/g,"Plan"],[/sản xuất/gi,"production"],[/Sản xuất/g,"Production"],[/công đoạn/gi,"operation"],[/Công đoạn/g,"Operation"],[/năng lực/gi,"capacity"],[/Năng lực/g,"Capacity"],[/vật tư/gi,"material"],[/Vật tư/g,"Material"],[/chất lượng/gi,"quality"],[/Chất lượng/g,"Quality"],[/điều độ/gi,"dispatch"],[/Điều độ/g,"Dispatch"],[/báo cáo/gi,"report"],[/Báo cáo/g,"Report"],[/sẵn sàng/gi,"ready"],[/Sẵn sàng/g,"Ready"],[/cảnh báo/gi,"alert"],[/Cảnh báo/g,"Alert"],[/rủi ro/gi,"risk"],[/Rủi ro/g,"Risk"],[/trễ/gi,"late"],[/Trễ/g,"Late"],[/quá tải/gi,"overload"],[/Quá tải/g,"Overload"],[/nút thắt/gi,"bottleneck"],[/Nút thắt/g,"Bottleneck"],[/số lượng/gi,"quantity"],[/Số lượng/g,"Quantity"],[/trạng thái/gi,"status"],[/Trạng thái/g,"Status"],[/ưu tiên/gi,"priority"],[/Ưu tiên/g,"Priority"],[/còn lại/gi,"remaining"],[/Còn lại/g,"Remaining"],[/hoàn thành/gi,"completed"],[/Hoàn thành/g,"Completed"],[/đang chạy/gi,"running"],[/Đang chạy/g,"Running"],[/đang chờ/gi,"waiting"],[/Đang chờ/g,"Waiting"],[/thiếu/gi,"shortage"],[/Thiếu/g,"Shortage"],[/hôm nay/gi,"today"],[/Hôm nay/g,"Today"],[/hôm qua/gi,"yesterday"],[/Hôm qua/g,"Yesterday"],[/ngày mai/gi,"tomorrow"],[/Ngày mai/g,"Tomorrow"],[/theo lô/gi,"by lot"],[/theo ngày/gi,"by date"],[/theo WO/gi,"by WO"],[/theo nhánh/gi,"by branch"],[/Tổng số/gi,"Total"],[/Tổng/gi,"Total"],[/Xem chi tiết/gi,"View details"],[/Mở màn hình/gi,"Open screen"],[/Tìm/gi,"Search"],[/Làm mới/gi,"Refresh"],[/Cập nhật/gi,"Update"],[/Thêm mới/gi,"Add new"],[/Tạo/gi,"Create"],[/Xóa/gi,"Delete"],[/Lưu/gi,"Save"],[/Hủy/gi,"Cancel"]
 ];
-function toEnglish(input:string){const lead=input.match(/^\s*/)?.[0]||"",trail=input.match(/\s*$/)?.[0]||"",core=input.trim();if(!core)return input;if(exact[core])return lead+exact[core]+trail;let out=core;for(const[r,v]of rules)out=out.replace(r,v);return lead+out+trail}
+function toEnglish(input:string){const lead=input.match(/^\s*/)?.[0]||"",trail=input.match(/\s*$/)?.[0]||"",core=input.trim();if(!core)return input;if(exact[core])return lead+exact[core]+trail;let out=core;for(const[r,v]of semanticRules)out=out.replace(r,v);for(const[r,v]of rules)out=out.replace(r,v);for(const[r,v]of fallbackWords)out=out.replace(r,v);return lead+out+trail}
 const originalText=new WeakMap<Text,string>(),originalAttrs=new WeakMap<Element,Map<string,string>>();
 function translateRoot(root:ParentNode,lang:AppLanguage){const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n:Node|null;while((n=walker.nextNode())){const t=n as Text;if(!t.parentElement||["SCRIPT","STYLE","CODE","PRE"].includes(t.parentElement.tagName))continue;if(!originalText.has(t))originalText.set(t,t.data);const base=originalText.get(t)!;const next=lang==="en"?toEnglish(base):base;if(t.data!==next)t.data=next}const els=root.querySelectorAll?.("[placeholder],[title],[aria-label]")||[];els.forEach(el=>{let m=originalAttrs.get(el);if(!m){m=new Map;originalAttrs.set(el,m)};["placeholder","title","aria-label"].forEach(a=>{const cur=el.getAttribute(a);if(cur!==null&&!m!.has(a))m!.set(a,cur);const base=m!.get(a);if(base!==undefined)el.setAttribute(a,lang==="en"?toEnglish(base):base)})})}
-export function LanguageProvider({children}:{children:React.ReactNode}){const[language,setState]=useState<AppLanguage>("vi");useEffect(()=>{const saved=localStorage.getItem("steel-erp-language") as AppLanguage|null;if(saved==="en"||saved==="vi")setState(saved)},[]);useEffect(()=>{document.documentElement.lang=language;translateRoot(document.body,language);const ob=new MutationObserver(ms=>{for(const m of ms){if(m.type==="characterData"&&m.target.parentNode)translateRoot(m.target.parentNode,language);m.addedNodes.forEach(n=>{if(n.nodeType===1)translateRoot(n as Element,language);else if(n.nodeType===3&&n.parentNode)translateRoot(n.parentNode,language)})}});ob.observe(document.body,{subtree:true,childList:true,characterData:true});return()=>ob.disconnect()},[language]);const setLanguage=useCallback((v:AppLanguage)=>{localStorage.setItem("steel-erp-language",v);setState(v)},[]);const toggleLanguage=useCallback(()=>setLanguage(language==="vi"?"en":"vi"),[language,setLanguage]);const value=useMemo(()=>({language,setLanguage,toggleLanguage}),[language,setLanguage,toggleLanguage]);return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>}
+export function LanguageProvider({children}:{children:React.ReactNode}){const[language,setState]=useState<AppLanguage>("vi");useEffect(()=>{const saved=localStorage.getItem("steel-erp-language") as AppLanguage|null;if(saved==="en"||saved==="vi")setState(saved)},[]);useEffect(()=>{document.documentElement.lang=language;translateRoot(document.body,language);const ob=new MutationObserver(ms=>{for(const m of ms){if(m.type==="characterData"&&m.target.parentNode)translateRoot(m.target.parentNode,language);m.addedNodes.forEach(n=>{if(n.nodeType===1)translateRoot(n as Element,language);else if(n.nodeType===3&&n.parentNode)translateRoot(n.parentNode,language)})}});ob.observe(document.body,{subtree:true,childList:true,characterData:true});return()=>ob.disconnect()},[language]);const setLanguage=useCallback((v:AppLanguage)=>{localStorage.setItem("steel-erp-language",v);setState(v)},[]);const toggleLanguage=useCallback(()=>setLanguage(language==="vi"?"en":"vi"),[language,setLanguage]);const t=useCallback((value:string)=>language==="en"?toEnglish(value):value,[language]);const value=useMemo(()=>({language,setLanguage,toggleLanguage,t}),[language,setLanguage,toggleLanguage,t]);return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>}
 export function useLanguage(){const c=useContext(LanguageContext);if(!c)throw new Error("useLanguage must be used inside LanguageProvider");return c}
