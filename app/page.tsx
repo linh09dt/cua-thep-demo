@@ -28,6 +28,27 @@ type PlanningAlert = {
   href: string;
 };
 
+type AdvancedKpi = {
+  materialReady: number;
+  materialShortage: number;
+  setReadyQty: number;
+  setGapQty: number;
+  openQuality: number;
+  qualityHold: number;
+  overloadedWorkCenters: number;
+  highLoadWorkCenters: number;
+  recommendationCount: number;
+};
+
+type BottleneckLot = {
+  id: string;
+  lotNo: string;
+  totalQty: number;
+  setReady: number;
+  setGap: number;
+  bottleneckBranch: string;
+};
+
 type Cards = {
   totalOrders: number;
   totalQty: number;
@@ -83,6 +104,8 @@ type OverallRow = {
 
 type DashboardData = {
   cards: Cards;
+  advancedKpi: AdvancedKpi;
+  topBottlenecks: BottleneckLot[];
   statusChart: StatusRow[];
   branchChart: BranchRow[];
   capacityChart: CapacityRow[];
@@ -96,6 +119,18 @@ type DashboardData = {
 };
 
 const EMPTY: DashboardData = {
+  advancedKpi: {
+    materialReady: 0,
+    materialShortage: 0,
+    setReadyQty: 0,
+    setGapQty: 0,
+    openQuality: 0,
+    qualityHold: 0,
+    overloadedWorkCenters: 0,
+    highLoadWorkCenters: 0,
+    recommendationCount: 0,
+  },
+  topBottlenecks: [],
   cards: {
     totalOrders: 0,
     totalQty: 0,
@@ -169,6 +204,8 @@ export default function DashboardPage() {
 
       setData({
         cards: result.cards ?? EMPTY.cards,
+        advancedKpi: result.advancedKpi ?? EMPTY.advancedKpi,
+        topBottlenecks: result.topBottlenecks ?? [],
         statusChart: result.statusChart ?? [],
         branchChart: result.branchChart ?? [],
         capacityChart: result.capacityChart ?? [],
@@ -284,6 +321,45 @@ export default function DashboardPage() {
             </div>
           </section>
         )}
+
+        <section className="mb-4 rounded-xl border border-blue-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-blue-100 bg-blue-50 px-4 py-3">
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-wide text-blue-700">
+                Advanced Planning KPI
+              </span>
+              <span className="ml-2 text-xs text-slate-500">
+                Material • Set Ready • Bottleneck • Quality
+              </span>
+            </div>
+            <Link href="/smart-planning" className="text-xs font-bold text-blue-700">
+              Mở Smart Planning →
+            </Link>
+          </div>
+
+          <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
+            <MiniKpi title="Material Ready" value={data.advancedKpi.materialReady} tone="green" />
+            <MiniKpi title="Material Shortage" value={data.advancedKpi.materialShortage} tone="red" />
+            <MiniKpi title="Set Ready" value={data.advancedKpi.setReadyQty} tone="green" />
+            <MiniKpi title="Set Gap" value={data.advancedKpi.setGapQty} tone="amber" />
+            <MiniKpi title="Quality Open" value={data.advancedKpi.openQuality} tone="amber" />
+            <MiniKpi title="Quality Hold" value={data.advancedKpi.qualityHold} tone="red" />
+            <MiniKpi title="WO Overload" value={data.advancedKpi.overloadedWorkCenters} tone="red" />
+            <MiniKpi title="Smart Recs" value={data.advancedKpi.recommendationCount} tone="blue" />
+          </div>
+
+          {data.topBottlenecks.length > 0 && (
+            <div className="border-t border-slate-100 px-4 py-3">
+              <div className="flex flex-wrap gap-2 text-xs">
+                {data.topBottlenecks.map((lot) => (
+                  <Link key={lot.id} href="/bottleneck" className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 font-bold text-amber-800">
+                    {lot.lotNo}: {lot.bottleneckBranch} • Gap {lot.setGap}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
 
         <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
           <MetricCard
@@ -565,6 +641,34 @@ export default function DashboardPage() {
 }
 
 type Tone = "blue" | "green" | "amber" | "violet" | "cyan" | "red";
+
+function MiniKpi({
+  title,
+  value,
+  tone = "blue",
+}: {
+  title: string;
+  value: string | number;
+  tone?: "blue" | "green" | "amber" | "red";
+}) {
+  const cls =
+    tone === "green"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : tone === "amber"
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : tone === "red"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : "border-blue-200 bg-blue-50 text-blue-700";
+
+  return (
+    <div className={`rounded-lg border p-3 ${cls}`}>
+      <div className="text-[9px] font-extrabold uppercase tracking-wide">
+        {title}
+      </div>
+      <div className="mt-1 text-xl font-black">{value}</div>
+    </div>
+  );
+}
 
 function MetricCard({
   title,

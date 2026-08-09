@@ -99,6 +99,48 @@ const steps = [
       "Quản lý xem tình trạng từng đơn, tiến độ Cánh/Khung/Phào, Đủ bộ, WO hiện tại, tải Capacity và đơn trễ.",
     detail: "Một màn hình tổng hợp từ Đơn hàng đến sản xuất.",
   },
+  {
+    no: "14",
+    title: "Material Readiness",
+    description:
+      "Xác nhận LSX READY / PARTIAL / SHORTAGE / HOLD trước khi Smart Planning ưu tiên sản xuất.",
+    detail: "Material thiếu hoặc Hold sẽ không được đưa vào đề xuất Smart Plan.",
+  },
+  {
+    no: "15",
+    title: "Set Readiness",
+    description:
+      "Tính Ready Cánh / Khung / Phào theo Good thực tế và matching theo từng LSX/đơn hàng.",
+    detail: "Set Ready = MIN(Cánh Ready, Khung Ready, Phào Ready) theo từng LSX.",
+  },
+  {
+    no: "16",
+    title: "Bottleneck Engine",
+    description:
+      "So sánh Gap Cánh / Khung / Phào và Capacity Load để xác định nhánh hoặc Work Center đang kéo chậm Lô.",
+    detail: "Planning ưu tiên nơi làm tăng số bộ hoàn chỉnh thay vì chỉ chạy đầy máy.",
+  },
+  {
+    no: "17",
+    title: "Smart Auto Planning",
+    description:
+      "Ngày giao + Priority Lô + Material + Bottleneck + Capacity tạo danh sách đề xuất theo Score.",
+    detail: "Đề xuất được lưu thành Planning Run để audit; planner vẫn kiểm soát Release Dispatch.",
+  },
+  {
+    no: "18",
+    title: "Schedule Board",
+    description:
+      "Hiển thị kế hoạch 7 ngày theo WO, Planned/Capacity, Load % và Overload để reschedule.",
+    detail: "Áp dụng finite-capacity: quá tải phải dời hoặc điều chỉnh thay vì giấu trong kế hoạch.",
+  },
+  {
+    no: "19",
+    title: "Quality / Hold / Traceability",
+    description:
+      "QC Event, Hold, Rework, Defect và Release Hold được trace theo LSX/WO.",
+    detail: "Quality Hold khóa luồng sản xuất liên quan cho đến khi QC Release.",
+  },
 ];
 
 export default function ErpLogicPage() {
@@ -126,12 +168,14 @@ export default function ErpLogicPage() {
           </div>
 
           <div className="mt-4 overflow-x-auto">
-            <div className="flex min-w-[1710px] items-center gap-2">
+            <div className="flex min-w-[2150px] items-center gap-2">
               <FlowBox title="Đơn hàng" sub="Web Order" />
               <Arrow />
               <FlowBox title="LSX Cha" sub="1 đơn = 1 LSX" />
               <Arrow />
               <FlowBox title="Lô sản xuất" sub="Gom LSX kế hoạch" />
+              <Arrow />
+              <FlowBox title="Material" sub="Ready / Shortage" />
               <Arrow />
               <FlowBox title="LSX Con" sub="Cánh / Khung / Phào" />
               <Arrow />
@@ -141,7 +185,13 @@ export default function ErpLogicPage() {
               <Arrow />
               <FlowBox title="WIP" sub="Min / Target / Max" />
               <Arrow />
+              <FlowBox title="Set Ready" sub="Cánh + Khung + Phào" />
+              <Arrow />
+              <FlowBox title="Bottleneck" sub="Gap / Constraint" />
+              <Arrow />
               <FlowBox title="Priority" sub="Thứ tự ưu tiên" />
+              <Arrow />
+              <FlowBox title="Smart Plan" sub="Score / Capacity" />
               <Arrow />
               <FlowBox title="Dispatch" sub="Điều độ" />
               <Arrow />

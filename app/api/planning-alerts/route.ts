@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { loadPlanningIntelligence } from "@/lib/planning-intelligence";
 
 type AlertLevel = "CRITICAL" | "WARNING" | "INFO" | "SUCCESS";
 
@@ -234,6 +235,47 @@ export async function GET() {
           href: "/production-lots",
         });
       }
+    }
+
+    // 4. Advanced Planning: Material / Quality Hold / Set Gap.
+    const advanced = await loadPlanningIntelligence(today);
+
+    for (const root of advanced.roots) {
+      if (["SHORTAGE", "HOLD"].includes(root.materialStatus)) {
+        alerts.push({
+          id: `material-${root.rootId}`,
+          level: "CRITICAL",
+          title: `${root.productionNo} thiếu/hold vật tư`,
+          message: `${root.orderNo} • ${root.materialStatus} • ${root.materialNote || "Cần xác nhận vật tư"}`,
+          metric: root.materialStatus,
+          href: "/material-readiness",
+        });
+      }
+
+      if (root.qualityHold) {
+        alerts.push({
+          id: `quality-${root.rootId}`,
+          level: "CRITICAL",
+          title: `${root.productionNo} đang Quality Hold`,
+          message: `${root.orderNo} • có ${root.openQualityCount} Quality Event đang mở`,
+          metric: "HOLD",
+          href: "/quality",
+        });
+      }
+    }
+
+    for (const lot of advanced.lots
+      .filter((x) => x.setGap > 0)
+      .sort((a, b) => b.setGap - a.setGap)
+      .slice(0, 8)) {
+      alerts.push({
+        id: `setgap-${lot.id}`,
+        level: lot.setGap >= Math.max(20, lot.totalQty * 0.25) ? "WARNING" : "INFO",
+        title: `${lot.lotNo} thiếu Đủ Bộ`,
+        message: `Set Ready ${lot.setReady}/${lot.totalQty} • Bottleneck ${lot.bottleneckBranch}`,
+        metric: `Gap ${lot.setGap}`,
+        href: "/set-readiness",
+      });
     }
 
     const rank: Record<AlertLevel, number> = {

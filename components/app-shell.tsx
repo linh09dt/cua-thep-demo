@@ -49,6 +49,11 @@ const menuGroups: MenuGroup[] = [
     items: [
       { href: "/production-orders", label: "Lệnh sản xuất", short: "LS" },
       { href: "/production-lots", label: "Lô sản xuất", short: "LO" },
+      { href: "/material-readiness", label: "Sẵn sàng vật tư", short: "MR" },
+      { href: "/set-readiness", label: "Sẵn sàng đủ bộ", short: "SR" },
+      { href: "/bottleneck", label: "Phân tích nút thắt", short: "BN" },
+      { href: "/smart-planning", label: "Kế hoạch thông minh", short: "SP" },
+      { href: "/schedule-board", label: "Bảng lịch sản xuất", short: "SB" },
       { href: "/dispatch", label: "Điều độ sản xuất", short: "DD" },
     ],
   },
@@ -57,6 +62,7 @@ const menuGroups: MenuGroup[] = [
     theme: "report",
     items: [
       { href: "/shop-floor", label: "Màn hình xưởng", short: "SX" },
+      { href: "/quality", label: "Chất lượng / Hold", short: "QC" },
       { href: "/production-report", label: "Báo cáo sản xuất", short: "BC" },
     ],
   },

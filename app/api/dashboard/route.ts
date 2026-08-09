@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { loadPlanningIntelligence } from "@/lib/planning-intelligence";
 
 function numericWo(value?: string | null) {
   const n = Number(String(value ?? "").replace(/\D/g, ""));
@@ -295,8 +296,15 @@ export async function GET() {
         ? Math.round((qtyCompleted / totalQty) * 100)
         : 0;
 
+    const advanced = await loadPlanningIntelligence(today);
+
     return NextResponse.json({
       success: true,
+      advancedKpi: advanced.kpi,
+      topBottlenecks: advanced.lots
+        .filter((x) => x.setGap > 0)
+        .sort((a, b) => b.setGap - a.setGap)
+        .slice(0, 5),
       cards: {
         totalOrders: orders.length,
         totalQty,
