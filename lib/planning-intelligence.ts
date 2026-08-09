@@ -168,7 +168,7 @@ export async function loadPlanningIntelligence(planDate?: string) {
     return row.status === "COMPLETED" ? quantity : 0;
   }
 
-  const rootRows = roots.map((root) => {
+  let rootRows = roots.map((root) => {
     const order = orderMap.get(root.order_id);
     const quantity = num(root.quantity || order?.so_luong);
     const canhReady = goodAtWo(root.id, terminalWo.CÁNH, quantity);
@@ -261,6 +261,56 @@ export async function loadPlanningIntelligence(planDate?: string) {
     .filter((x) => x.capacity > 0)
     .sort((a, b) => woNo(a.woCode) - woNo(b.woCode));
 
+  // Enrich Set Readiness with the actual blocking WO and a simple
+  // capacity-based ETA. This does not change execution logic; it only
+  // explains where each door set is currently constrained.
+  const branchWoRangesForStatus: Record<
+    Exclude<PlanningBranch, "ĐỦ BỘ">,
+    [number, number]
+  > = {
+    "CÁNH": [1, 5],
+    "KHUNG": [6, 10],
+    "PHÀO": [11, 13],
+  };
+
+  rootRows = rootRows.map((root) => {
+    const branch = root.bottleneckBranch;
+    const [from, to] = branchWoRangesForStatus[branch];
+    const branchRows = (opsByRoot.get(root.rootId) ?? [])
+      .map((po) => ({ po, op: opMap.get(po.operation_id) }))
+      .filter(({ op }) => {
+        const n = woNo(op?.wo_code);
+        return n >= from && n <= to;
+      })
+      .sort((a, b) => woNo(a.op?.wo_code) - woNo(b.op?.wo_code));
+
+    const current =
+      branchRows.find(({ po }) => po.status !== "COMPLETED") ??
+      branchRows.at(-1);
+
+    const currentOp = current?.op;
+    const load = currentOp
+      ? operationLoad.find((x) => x.operationId === currentOp.id)
+      : undefined;
+
+    const branchGap = root.branchGap[branch];
+    const dailyAvailable = Math.max(0, load?.remaining ?? 0);
+    const estimatedDaysToReady =
+      branchGap <= 0
+        ? 0
+        : dailyAvailable > 0
+        ? Math.ceil(branchGap / dailyAvailable)
+        : null;
+
+    return {
+      ...root,
+      blockingWo: currentOp?.wo_code ?? "-",
+      blockingOperation: currentOp?.operation_name ?? "-",
+      blockingCapacityRemaining: dailyAvailable,
+      estimatedDaysToReady,
+    };
+  });
+
   const lotRows = lots.map((lot) => {
     const memberRootIds = lotItems
       .filter((x) => x.lot_id === lot.id && x.production_order_id)
@@ -339,8 +389,8 @@ export async function loadPlanningIntelligence(planDate?: string) {
 
       const currentOp = current.op;
       const load = operationLoad.find((x) => x.operationId === currentOp.id);
-      const available = load?.remaining ?? 0;
-      const recommendedQty = Math.max(0, Math.min(gap, available || gap));
+      const available = Math.max(0, load?.remaining ?? 0);
+      const recommendedQty = Math.max(0, Math.min(gap, available));
       if (recommendedQty <= 0) continue;
 
       const bottleneckBonus = root.bottleneckBranch === branch ? 40 : 0;
@@ -366,6 +416,7 @@ export async function loadPlanningIntelligence(planDate?: string) {
           root.bottleneckBranch === branch ? "Bottleneck của bộ cửa" : "Nhánh còn thiếu",
           days < 0 ? "Đơn trễ hạn" : days <= 2 ? "Sắp đến hạn giao" : "Theo ngày giao",
           `Gap ${gap} bộ`,
+          `Capacity còn ${available} bộ`,
         ].join(" • "),
       });
     }

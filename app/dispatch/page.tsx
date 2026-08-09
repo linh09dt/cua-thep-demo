@@ -47,6 +47,7 @@ type DispatchItem = {
 type DispatchMetrics = {
   capacity: number;
   capacityReleasedToday: number;
+  carryOver: number;
   capacityRemaining: number;
   wipMin: number;
   wipCurrent: number;
@@ -169,7 +170,6 @@ export default function DispatchPage() {
       setEligible(result.eligible ?? []);
       setCapacity(Number(result.capacity ?? 0));
       setMetrics(result.metrics ?? null);
-      setMetrics(result.metrics ?? null);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Không thể tải Điều độ."
@@ -213,10 +213,9 @@ export default function DispatchPage() {
       setEligible(result.eligible ?? []);
       setCapacity(Number(result.capacity ?? 0));
       setMetrics(result.metrics ?? null);
-      setMetrics(result.metrics ?? null);
 
       if (action === "auto_generate") {
-        setMessage("Đã tự động tạo Dispatch Draft theo Priority + Capacity.");
+        setMessage("Đã tạo Dispatch Draft theo Carry Over → Capacity → WIP Buffer → Eligible → Priority.");
       } else if (action === "release") {
         setMessage("Đã Release Dispatch.");
       } else if (action === "add_item") {
@@ -342,12 +341,19 @@ export default function DispatchPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <Summary title="WO" value={selectedOperation?.wo_code ?? "-"} />
             <Summary title="Capacity hiệu dụng" value={capacity} />
             <Summary
               title="Capacity còn lại"
               value={metrics?.capacityRemaining ?? remaining}
+            />
+            <Summary
+              title="Carry Over"
+              value={`${metrics?.carryOver ?? 0} ${
+                metrics?.unitName ?? "bộ"
+              }`}
+              warning={(metrics?.carryOver ?? 0) > 0}
             />
             <Summary
               title="WIP hiện tại"
@@ -390,6 +396,33 @@ export default function DispatchPage() {
               value={`${planned} ${metrics?.unitName ?? "bộ"}`}
             />
           </div>
+
+          {metrics && (
+            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4">
+              <div className="text-xs font-extrabold uppercase text-blue-700">
+                Giải thích số lượng Auto Dispatch
+              </div>
+              <div className="mt-2 grid gap-2 text-xs text-slate-700 md:grid-cols-2 xl:grid-cols-4">
+                <div>
+                  <b>1. Capacity ngày:</b> {metrics.capacity}
+                </div>
+                <div>
+                  <b>2. Carry Over:</b> {metrics.carryOver ?? 0}
+                </div>
+                <div>
+                  <b>3. Capacity còn:</b> {metrics.capacityRemaining}
+                </div>
+                <div>
+                  <b>4. WIP thiếu Target:</b> {metrics.wipNeedToTarget}
+                </div>
+              </div>
+              <div className="mt-2 text-xs leading-5 text-blue-900">
+                WO đầu nhánh dùng Capacity còn lại. WO sau của Cánh / Khung /
+                Phào chừa phần WIP thiếu Target; Eligible được sắp theo Priority
+                và không tách LSX.
+              </div>
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
             <span

@@ -270,6 +270,23 @@ export default function DashboardPage() {
           </div>
         )}
 
+        <Link
+          href="/control-tower"
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm transition hover:border-blue-300"
+        >
+          <div>
+            <div className="text-xs font-extrabold uppercase tracking-wide text-blue-700">
+              Production Control Tower
+            </div>
+            <div className="mt-1 text-xs text-slate-600">
+              Xem một luồng ngoại lệ duy nhất: Delivery → Material → Set/Bottleneck → Capacity/WIP → Quality.
+            </div>
+          </div>
+          <span className="text-xs font-bold text-blue-700">
+            Mở Control Tower →
+          </span>
+        </Link>
+
         {planningAlerts.length > 0 && (
           <section className="mb-4 rounded-xl border border-amber-200 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-100 bg-amber-50 px-4 py-3">

@@ -20,6 +20,7 @@ type WipSetting = {
 type DispatchMetrics = {
   capacity: number;
   capacityReleasedToday: number;
+  carryOver: number;
   capacityRemaining: number;
   wipMin: number;
   wipCurrent: number;
@@ -240,6 +241,56 @@ async function getReportedGood(operationId: string) {
   );
 }
 
+async function getCarryOver(
+  operationId: string,
+  dispatchDate: string
+) {
+  const { data: headers, error: headerError } = await supabaseAdmin
+    .from("production_dispatch_headers")
+    .select("id")
+    .eq("operation_id", operationId)
+    .eq("status", "RELEASED")
+    .lt("dispatch_date", dispatchDate);
+
+  if (headerError) throw headerError;
+
+  const headerIds = (headers ?? []).map((item) => item.id);
+  if (headerIds.length === 0) return 0;
+
+  const { data: items, error: itemError } = await supabaseAdmin
+    .from("production_dispatch_items")
+    .select("id, quantity")
+    .in("dispatch_id", headerIds);
+
+  if (itemError) throw itemError;
+
+  const itemIds = (items ?? []).map((item) => item.id);
+  if (itemIds.length === 0) return 0;
+
+  const { data: reports, error: reportError } = await supabaseAdmin
+    .from("production_reports")
+    .select("dispatch_item_id, good_qty")
+    .in("dispatch_item_id", itemIds)
+    .lt("report_date", dispatchDate);
+
+  if (reportError) throw reportError;
+
+  const goodByItem = new Map<string, number>();
+  for (const report of reports ?? []) {
+    goodByItem.set(
+      report.dispatch_item_id,
+      (goodByItem.get(report.dispatch_item_id) ?? 0) +
+        Number(report.good_qty || 0)
+    );
+  }
+
+  return (items ?? []).reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    const good = goodByItem.get(item.id) ?? 0;
+    return sum + Math.max(0, quantity - good);
+  }, 0);
+}
+
 async function getReleasedToday(
   operationId: string,
   dispatchDate: string
@@ -286,6 +337,7 @@ async function getDispatchMetrics(
     releasedQty,
     goodQty,
     releasedToday,
+    carryOver,
     operation,
   ] = await Promise.all([
     getCapacity(operationId),
@@ -293,13 +345,17 @@ async function getDispatchMetrics(
     getReleasedQuantity(operationId),
     getReportedGood(operationId),
     getReleasedToday(operationId, dispatchDate),
+    getCarryOver(operationId, dispatchDate),
     getOperation(operationId),
   ]);
 
   // WIP hiện tại của WO = lượng Dispatch đã RELEASED tại chính WO đó
   // nhưng chưa được báo Good hoàn thành.
   const wipCurrent = Math.max(0, releasedQty - goodQty);
-  const capacityRemaining = Math.max(0, capacity - releasedToday);
+  const capacityRemaining = Math.max(
+    0,
+    capacity - carryOver - releasedToday
+  );
 
   // Nếu WIP chưa bật hoặc Target = 0 thì giữ cơ chế Capacity hiện tại.
   const wipNeedToTarget =
@@ -353,6 +409,7 @@ async function getDispatchMetrics(
   return {
     capacity,
     capacityReleasedToday: releasedToday,
+    carryOver,
     capacityRemaining,
     wipMin: setting.wipMin,
     wipCurrent,

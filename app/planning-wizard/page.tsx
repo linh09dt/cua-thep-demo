@@ -1216,7 +1216,7 @@ function StepAlerts({
         <section className="rounded-xl border border-blue-200 bg-blue-50 p-4">
           <div className="font-bold text-slate-900">Smart Planning đề xuất</div>
           <p className="mt-1 text-xs text-slate-500">
-            Score dựa trên ngày giao + Priority Lô + Material + Bottleneck + Capacity.
+            Score dựa trên ngày giao + Priority Lô + Material + Bottleneck; SL đề xuất luôn bị giới hạn bởi Capacity còn lại.
           </p>
           <div className="mt-3 space-y-2">
             {recommendations.length === 0 && (
@@ -1316,7 +1316,7 @@ function StepDispatch({
       <StepTitle
         no={5}
         title="Điều độ sản xuất"
-        description="Sau Smart Plan, Dispatch thực thi theo Carry Over → Capacity → WIP Buffer → Eligible → Priority, sau đó planner Release xuống xưởng."
+        description="Sau Smart Plan, Dispatch thực thi theo một công thức thống nhất: Carry Over → Capacity còn lại → WIP Buffer → Eligible → Priority; planner kiểm tra rồi mới Release xuống xưởng."
       />
 
       <div className="mb-4 grid gap-3 md:grid-cols-[220px_1fr_auto]">
