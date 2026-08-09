@@ -7,139 +7,134 @@ const steps = [
     no: "01",
     title: "Nhập đơn hàng",
     description:
-      "Sales nhập đơn trực tiếp trên web. Model, Màu, Khóa, Hướng mở và Tình trạng lấy từ Master Data.",
-    detail: "Nguồn dữ liệu đầu vào của toàn bộ ERP.",
+      "Sales nhập đơn trực tiếp trên web. Model, Màu, Khóa, Hướng mở lấy từ Master Data.",
+    detail: "Ngày giao là cam kết đầu vào cho toàn bộ Planning Engine.",
   },
   {
     no: "02",
     title: "Tạo lệnh sản xuất",
     description:
-      "Mỗi đơn hàng tạo 1 LSX Cha. Từ LSX Cha tự sinh 3 LSX Con: Cánh, Khung, Phào.",
-    detail:
-      "LSX phản ánh nhu cầu sản xuất thực của đơn hàng và được tạo trước khi lập Lô.",
+      "Mỗi đơn tạo 1 LSX Cha; hệ thống sinh 3 LSX Con Cánh / Khung / Phào và các WO theo Routing.",
+    detail: "LSX được tạo trước khi đưa vào Lô sản xuất.",
   },
   {
     no: "03",
     title: "Lập Lô sản xuất",
     description:
-      "Kế hoạch chọn các LSX Cha đã tạo để gom thành Production Lot theo ngày sản xuất, ngày giao và Priority.",
-    detail:
-      "Lô là tầng gom kế hoạch; không tạo LSX và không thay thế Dispatch.",
+      "Planner gom các LSX Cha theo ngày sản xuất, ngày giao và Priority rồi Release Lô.",
+    detail: "Chỉ Lô RELEASED/RUNNING được Smart Planning xét ưu tiên.",
   },
   {
     no: "04",
-    title: "Sinh WO theo Routing",
+    title: "Material Readiness",
     description:
-      "Routing quyết định LSX Con phải đi qua các WO nào. Cánh, Khung, Phào có Routing riêng.",
-    detail: "Không hard-code trình tự công đoạn trong đơn hàng.",
+      "Xác nhận READY / PARTIAL / SHORTAGE / HOLD tại LSX Cha trước khi lập kế hoạch.",
+    detail: "SHORTAGE/HOLD bị loại khỏi Smart Recommendation.",
   },
   {
     no: "05",
-    title: "Capacity theo WO",
+    title: "Routing & WO",
     description:
-      "Mỗi WO có Capacity hiệu dụng và WIP Min / Target / Max để điều tiết lượng công việc.",
-    detail:
-      "Capacity giới hạn lượng cấp trong ngày; WIP giữ dòng sản xuất không thiếu việc hoặc ùn việc.",
+      "Cánh, Khung, Phào chạy Routing riêng; WO01–WO13 là các nhánh trước điểm hội tụ.",
+    detail: "Routing được cấu hình, không hard-code theo đơn hàng.",
   },
   {
     no: "06",
-    title: "Priority theo WO",
+    title: "Capacity + WIP Buffer",
     description:
-      "Mỗi WO có rule ưu tiên riêng như Ngày giao, Màu, Ngày đặt, Thứ tự WO trước.",
-    detail: "Priority quyết định thứ tự công việc trước khi cấp xuống xưởng.",
+      "Capacity là giới hạn cứng; WIP Min/Target/Max mô tả buffer giữa các WO.",
+    detail: "WO đầu chạy theo Capacity; WO sau chừa phần thiếu WIP Target.",
   },
   {
     no: "07",
-    title: "Điều độ sản xuất",
+    title: "Priority theo WO",
     description:
-      "Điều độ tách Cánh / Khung / Phào / Đủ bộ. Auto Dispatch lấy Eligible → WIP → Capacity → Priority → Draft.",
-    detail:
-      "Với Cánh/Khung/Phào, WO sau được Eligible khi Dispatch WO trước đã RELEASED.",
+      "Eligible được sắp theo Priority riêng từng WO trước khi chọn vào Dispatch.",
+    detail: "Priority không làm vượt Capacity.",
   },
   {
     no: "08",
-    title: "Release Dispatch",
+    title: "Set Readiness",
     description:
-      "Dispatch sau khi Release trở thành danh sách công việc chính thức của xưởng theo ngày và WO.",
-    detail: "Chỉ Dispatch Released mới được báo cáo sản xuất.",
+      "Tính Good thực tế tại WO05/WO10/WO13 theo từng LSX và xác định số bộ sẵn sàng.",
+    detail: "Set Ready = MIN(Cánh Ready, Khung Ready, Phào Ready) theo đúng LSX, không cộng chéo đơn.",
   },
   {
     no: "09",
-    title: "Báo cáo sản xuất",
+    title: "Bottleneck Engine",
     description:
-      "Xưởng nhập Good / NG theo Dispatch. Remain = SL Dispatch - Good.",
-    detail: "Remain = 0 thì WO hiện tại Completed.",
+      "So sánh Set Gap, Branch Gap và Capacity Load để biết nhánh/Work Center đang kéo chậm Lô.",
+    detail: "Mục tiêu là tăng bộ hoàn chỉnh, không chỉ chạy đầy máy.",
   },
   {
     no: "10",
-    title: "Điều độ gối đầu công đoạn",
+    title: "Smart Auto Planning",
     description:
-      "Trong 3 nhánh Cánh / Khung / Phào, WO sau được phép điều độ khi Dispatch WO trước đã RELEASED, không chờ hoàn thành toàn bộ.",
-    detail:
-      "WIP Target và Capacity quyết định lượng cấp; Priority quyết định LSX nào đi trước.",
+      "Ngày giao + Priority Lô + Material + Bottleneck + Capacity tạo Planning Score và lượng đề xuất.",
+    detail: "Planning Run được lưu để audit; không tự Release Dispatch.",
   },
   {
     no: "11",
-    title: "Điểm hội tụ đủ bộ",
+    title: "Schedule Board 7 ngày",
     description:
-      "WO05 Cánh + WO10 Khung + WO13 Phào hoàn thành thì 3 LSX Con Completed và hệ thống xác nhận Đủ bộ.",
-    detail: "Đủ bộ mới được mở WO14 Hàn liên kết.",
+      "Planned/Capacity theo từng WO được hiển thị như finite-capacity schedule.",
+    detail: "Overload >100% phải reschedule hoặc điều chỉnh nguồn lực.",
   },
   {
     no: "12",
-    title: "Luồng chung sau đủ bộ",
+    title: "Auto Dispatch theo nhánh",
     description:
-      "Hàn liên kết → Vệ sinh trước sơn → Sơn → Dán vân → Lắp ráp/Đóng gói → Nhập kho → Xuất kho.",
-    detail: "Từ đây sản phẩm được quản lý theo bộ cửa hoàn chỉnh.",
+      "Cánh/Khung/Phào có thể tạo Draft cho toàn bộ WO theo Carry Over → Capacity → WIP Buffer → Eligible → Priority.",
+    detail: "Không tự Release; planner kiểm tra trước khi xuống xưởng.",
   },
   {
     no: "13",
-    title: "Theo dõi & Dashboard",
+    title: "Release Dispatch",
     description:
-      "Quản lý xem tình trạng từng đơn, tiến độ Cánh/Khung/Phào, Đủ bộ, WO hiện tại, tải Capacity và đơn trễ.",
-    detail: "Một màn hình tổng hợp từ Đơn hàng đến sản xuất.",
+      "Dispatch RELEASED là danh sách công việc chính thức của xưởng và mở Eligible cho WO sau trong nhánh.",
+    detail: "WO sau không cần chờ WO trước Completed toàn bộ.",
   },
   {
     no: "14",
-    title: "Material Readiness",
+    title: "Shop Floor Report",
     description:
-      "Xác nhận LSX READY / PARTIAL / SHORTAGE / HOLD trước khi Smart Planning ưu tiên sản xuất.",
-    detail: "Material thiếu hoặc Hold sẽ không được đưa vào đề xuất Smart Plan.",
+      "Xưởng nhập Good / NG theo Dispatch Released; Remain là phần chưa hoàn thành.",
+    detail: "Good thực tế cập nhật WIP, Set Ready và tiến độ đơn.",
   },
   {
     no: "15",
-    title: "Set Readiness",
+    title: "Carry Over",
     description:
-      "Tính Ready Cánh / Khung / Phào theo Good thực tế và matching theo từng LSX/đơn hàng.",
-    detail: "Set Ready = MIN(Cánh Ready, Khung Ready, Phào Ready) theo từng LSX.",
+      "Remain của Dispatch ngày trước được chuyển sang ngày mới và chiếm Capacity trước việc mới.",
+    detail: "Không tạo trùng LSX/WO khi Carry Over.",
   },
   {
     no: "16",
-    title: "Bottleneck Engine",
+    title: "Điểm hội tụ Đủ Bộ",
     description:
-      "So sánh Gap Cánh / Khung / Phào và Capacity Load để xác định nhánh hoặc Work Center đang kéo chậm Lô.",
-    detail: "Planning ưu tiên nơi làm tăng số bộ hoàn chỉnh thay vì chỉ chạy đầy máy.",
+      "Cánh + Khung + Phào phải đủ theo cùng LSX trước khi mở luồng chung WO14–WO20.",
+    detail: "Set Ready là checkpoint thực tế trước công đoạn chung.",
   },
   {
     no: "17",
-    title: "Smart Auto Planning",
+    title: "Quality / Hold / Traceability",
     description:
-      "Ngày giao + Priority Lô + Material + Bottleneck + Capacity tạo danh sách đề xuất theo Score.",
-    detail: "Đề xuất được lưu thành Planning Run để audit; planner vẫn kiểm soát Release Dispatch.",
+      "QC, HOLD, REWORK, DEFECT được trace theo LSX/WO; Hold khóa luồng liên quan.",
+    detail: "Chỉ QC Release Hold mới mở lại sản xuất.",
   },
   {
     no: "18",
-    title: "Schedule Board",
+    title: "Luồng chung sau Đủ Bộ",
     description:
-      "Hiển thị kế hoạch 7 ngày theo WO, Planned/Capacity, Load % và Overload để reschedule.",
-    detail: "Áp dụng finite-capacity: quá tải phải dời hoặc điều chỉnh thay vì giấu trong kế hoạch.",
+      "WO14 Hàn liên kết → WO15 Vệ sinh → WO16 Sơn → WO17 Dán vân → WO18 Đóng gói → WO19 Nhập kho → WO20 Xuất kho.",
+    detail: "Từ điểm hội tụ, sản phẩm được quản lý theo bộ cửa hoàn chỉnh.",
   },
   {
     no: "19",
-    title: "Quality / Hold / Traceability",
+    title: "Dashboard & Closed-loop Planning",
     description:
-      "QC Event, Hold, Rework, Defect và Release Hold được trace theo LSX/WO.",
-    detail: "Quality Hold khóa luồng sản xuất liên quan cho đến khi QC Release.",
+      "Material, Set Gap, Bottleneck, Capacity, Good/NG, Carry Over và Quality quay lại Dashboard/Cảnh báo.",
+    detail: "Kết quả hôm nay là đầu vào để lập kế hoạch ngày tiếp theo.",
   },
 ];
 
@@ -155,10 +150,10 @@ export default function ErpLogicPage() {
             Logic vận hành ERP
           </h1>
           <p className="mt-1 max-w-5xl text-sm text-slate-500">
-            Màn hình mô tả toàn bộ cách hệ thống vận hành từ lúc nhận đơn hàng
-            đến lúc hoàn thành sản xuất. Bản demo bổ sung Wizard lập kế hoạch,
-            cảnh báo ngoại lệ, kế hoạch 7 ngày, timeline đơn hàng và màn hình xưởng
-            để minh họa vòng điều hành khép kín.
+            Màn hình mô tả toàn bộ logic ERP/MES cửa thép từ Đơn hàng → LSX → Lô →
+            Material Readiness → Set Readiness → Bottleneck → Smart Planning → Dispatch →
+            Shop Floor → Quality → Dashboard. Kiến trúc mới giữ nguyên Routing/WO hiện tại,
+            nhưng bổ sung lớp Planning theo finite-capacity và constraint để ưu tiên tạo nhiều bộ cửa hoàn chỉnh nhất.
           </p>
         </div>
 
@@ -193,15 +188,21 @@ export default function ErpLogicPage() {
               <Arrow />
               <FlowBox title="Smart Plan" sub="Score / Capacity" />
               <Arrow />
-              <FlowBox title="Dispatch" sub="Điều độ" />
+              <FlowBox title="Schedule" sub="Finite Capacity" />
+              <Arrow />
+              <FlowBox title="Dispatch" sub="Draft / Release" />
               <Arrow />
               <FlowBox title="Report" sub="Good / NG" />
               <Arrow />
+              <FlowBox title="Carry Over" sub="Remain ngày trước" />
+              <Arrow />
               <FlowBox title="Đủ bộ" sub="Điểm hội tụ" />
+              <Arrow />
+              <FlowBox title="Quality" sub="QC / Hold / Rework" />
               <Arrow />
               <FlowBox title="WO chung" sub="WO14 → WO20" />
               <Arrow />
-              <FlowBox title="Hoàn thành" sub="Dashboard" />
+              <FlowBox title="Hoàn thành" sub="Dashboard / Re-plan" />
             </div>
           </div>
         </section>
@@ -307,17 +308,17 @@ export default function ErpLogicPage() {
               <LogicRow
                 no="2"
                 title="Đọc WIP của WO"
-                text="WIP hiện tại = lượng Dispatch RELEASED tại WO - Good đã báo cáo. So sánh với WIP Min / Target / Max."
+                text="WIP là buffer giữa các WO. Min cảnh báo thiếu việc, Target là mức đệm mong muốn, Max cảnh báo ùn. WIP không thay thế Capacity."
               />
               <LogicRow
                 no="3"
-                title="Tính lượng cần cấp"
-                text="Nếu WIP dưới Target, engine tính lượng thiếu đến Target. Nếu WIP đạt Max thì không Auto Dispatch thêm."
+                title="Tính Carry Over + WIP Buffer"
+                text="Carry Over ngày trước chiếm Capacity trước. WO đầu nhánh dùng Capacity còn lại; WO sau chừa phần thiếu để đạt WIP Target rồi mới cấp phần Capacity còn lại."
               />
               <LogicRow
                 no="4"
-                title="Kiểm tra Capacity"
-                text="Lượng Auto Dispatch không vượt Capacity hiệu dụng còn lại trong ngày."
+                title="Kiểm tra Capacity hữu hạn"
+                text="Capacity hiệu dụng là giới hạn cứng trong ngày. Engine không che quá tải; phần vượt phải Carry Over hoặc reschedule sang ngày sau."
               />
               <LogicRow
                 no="5"
@@ -327,7 +328,7 @@ export default function ErpLogicPage() {
               <LogicRow
                 no="6"
                 title="Tạo Dispatch Draft"
-                text="Không tách LSX. Người kế hoạch được thêm/bỏ thủ công nhưng không được vượt Capacity hoặc WIP Max."
+                text="Không tách LSX. Engine chọn theo Eligible + Priority trong giới hạn Auto Limit. WIP Max dùng cảnh báo, Capacity vẫn là giới hạn cứng."
               />
               <LogicRow
                 no="7"
@@ -350,15 +351,19 @@ export default function ErpLogicPage() {
               </div>
 
               <div className="mt-2 text-sm text-slate-700">
-                <strong>Nhu cầu WIP</strong> = MAX(0, WIP Target - WIP hiện tại)
+                <strong>WIP Buffer thiếu</strong> = MAX(0, WIP Target - WIP hiện tại)
               </div>
 
               <div className="mt-2 text-sm text-slate-700">
-                <strong>Auto Dispatch tối đa</strong> = MIN(Nhu cầu WIP, Capacity còn lại)
+                <strong>WO đầu nhánh</strong> = MIN(Eligible, Capacity còn lại sau Carry Over)
               </div>
 
               <div className="mt-2 text-sm text-slate-700">
-                <strong>Remain</strong> = SL Dispatch - Good
+                <strong>WO sau</strong> = MIN(Eligible, MAX(0, Capacity còn lại - WIP Buffer thiếu))
+              </div>
+
+              <div className="mt-2 text-sm text-slate-700">
+                <strong>Remain / Carry Over</strong> = SL Dispatch - Good
               </div>
             </div>
           </section>
@@ -367,10 +372,10 @@ export default function ErpLogicPage() {
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5">
             <h2 className="font-bold text-slate-900">
-              13 bước vận hành
+              19 bước vận hành + 6 Phase Planning/MES
             </h2>
             <p className="mt-1 text-xs text-slate-500">
-              Trình tự chính của ERP demo hiện tại.
+              Trình tự đầy đủ từ nhận đơn đến finite-capacity planning, shop-floor execution, quality và phản hồi kế hoạch.
             </p>
           </div>
 
@@ -417,12 +422,12 @@ export default function ErpLogicPage() {
               text="Quy định đường đi công đoạn của sản phẩm."
             />
             <Principle
-              title="Capacity + Priority"
-              text="Quyết định lượng cấp và thứ tự công việc."
+              title="Finite Capacity + Constraint"
+              text="Capacity là trần; Bottleneck/Set Gap quyết định chỗ cần ưu tiên."
             />
             <Principle
-              title="Report kéo luồng"
-              text="Báo cáo hoàn thành WO trước mới mở WO sau."
+              title="Closed-loop Planning"
+              text="Good/NG, Quality Hold và Carry Over quay lại Planning cho ngày tiếp theo."
             />
           </div>
         </section>

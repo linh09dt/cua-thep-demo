@@ -6,91 +6,113 @@ import AppShell from "@/components/app-shell";
 const steps = [
   {
     no: "01",
-    title: "Bắt đầu từ Dashboard",
-    text: "Cho khách xem Tổng đơn, Đang sản xuất, Đủ Bộ, Trễ hạn và các cảnh báo kế hoạch nổi bật.",
+    title: "Dashboard: bắt đầu từ cam kết giao hàng",
+    text: "Cho khách xem tổng đơn, đơn trễ, Set Ready, Material Shortage, Quality Hold, Work Center quá tải và các cảnh báo ưu tiên.",
     href: "/",
     action: "Mở Dashboard",
   },
   {
     no: "02",
-    title: "Tạo Lệnh sản xuất",
-    text: "Chọn một đơn chưa có LSX và tạo LSX Cha → Cánh / Khung / Phào → WO theo Routing.",
+    title: "Đơn hàng → Lệnh sản xuất",
+    text: "Chọn một đơn chưa có LSX. ERP tạo LSX Cha, 3 LSX Con Cánh / Khung / Phào và các WO theo Routing.",
     href: "/production-orders",
     action: "Mở Lệnh sản xuất",
   },
   {
     no: "03",
-    title: "Gom LSX thành Lô",
-    text: "Chọn các LSX có ngày giao phù hợp, tạo Production Lot và Release để minh họa kế hoạch theo lô.",
+    title: "Gom LSX vào Lô sản xuất",
+    text: "Chọn LSX theo ngày giao/ưu tiên, tạo Production Lot và Release Lô. Lô là tầng kế hoạch, không thay thế LSX hay Dispatch.",
     href: "/production-lots",
     action: "Mở Lô sản xuất",
   },
   {
     no: "04",
-    title: "Cho ERP phát hiện vấn đề",
-    text: "Mở Cảnh báo kế hoạch và Kế hoạch 7 ngày để chỉ ra đơn trễ, công đoạn quá tải và lô lệch Cánh / Khung / Phào.",
-    href: "/planning-alerts",
-    action: "Mở Cảnh báo",
+    title: "Phase 1: kiểm tra Material Readiness",
+    text: "Xác nhận READY / PARTIAL / SHORTAGE / HOLD. LSX thiếu vật tư hoặc Hold không được đưa vào Smart Planning.",
+    href: "/material-readiness",
+    action: "Kiểm tra vật tư",
   },
   {
     no: "05",
-    title: "Điều độ bằng WIP + Capacity + Priority",
-    text: "Chọn WO, xem WIP hiện tại/Target, Capacity còn lại và đề xuất Auto Dispatch trước khi Release.",
+    title: "Phase 1–2: Set Readiness & Bottleneck",
+    text: "ERP tính Cánh Ready, Khung Ready, Phào Ready theo từng LSX; Set Ready = MIN của 3 nhánh và xác định nhánh/Work Center đang kéo chậm Lô.",
+    href: "/set-readiness",
+    action: "Xem Đủ Bộ",
+  },
+  {
+    no: "06",
+    title: "Phase 3: Smart Auto Planning",
+    text: "Ngày giao + Priority Lô + Material + Set Gap + Bottleneck + Capacity tạo danh sách LSX/WO nên ưu tiên và Planning Score. Planner vẫn là người Release.",
+    href: "/smart-planning",
+    action: "Mở Smart Plan",
+  },
+  {
+    no: "07",
+    title: "Phase 4: finite-capacity 7 ngày",
+    text: "Xem Planned/Capacity theo từng WO. Ô quá 100% được đánh dấu Overload để dời lịch hoặc điều chỉnh trước khi xuống xưởng.",
+    href: "/schedule-board",
+    action: "Mở Schedule Board",
+  },
+  {
+    no: "08",
+    title: "Điều độ Cánh / Khung / Phào",
+    text: "Dispatch dùng Carry Over → Capacity → WIP Buffer → Eligible → Priority. Có thể tạo tất cả Draft trong từng nhánh rồi kiểm tra trước khi Release.",
     href: "/dispatch",
     action: "Mở Điều độ",
   },
   {
-    no: "06",
-    title: "Xưởng báo cáo trực tiếp",
-    text: "Dùng Màn hình xưởng để nhập Good / NG trên Dispatch Released và cho khách thấy tiến độ cập nhật.",
+    no: "09",
+    title: "Xưởng thực thi & báo cáo",
+    text: "Tổ sản xuất chỉ làm Dispatch Released, nhập Good / NG. Remain chưa hoàn thành được Carry Over và chiếm Capacity ngày kế tiếp.",
     href: "/shop-floor",
     action: "Mở Màn hình xưởng",
   },
   {
-    no: "07",
-    title: "Trace đơn hàng",
-    text: "Mở Theo dõi đơn hàng, chọn một đơn và xem Timeline từ Đơn → LSX → Lô → Cánh/Khung/Phào → Đủ Bộ → Hoàn thành.",
+    no: "10",
+    title: "Phase 5: Quality / Hold / Traceability",
+    text: "Tạo QC, HOLD, REWORK hoặc DEFECT theo LSX/WO. Quality Hold khóa luồng liên quan cho đến khi QC Release Hold.",
+    href: "/quality",
+    action: "Mở Quality",
+  },
+  {
+    no: "11",
+    title: "Theo dõi đơn & điểm hội tụ Đủ Bộ",
+    text: "Trace từ Đơn → LSX → Lô → Cánh/Khung/Phào → Set Ready → WO chung. Không cộng chéo component của các đơn khác nhau.",
     href: "/order-tracking",
     action: "Mở Timeline",
+  },
+  {
+    no: "12",
+    title: "Phase 6: đóng vòng điều hành",
+    text: "Dashboard và Cảnh báo nhận lại Good/NG, Carry Over, Material, Quality, Bottleneck và Capacity Load để planner lập kế hoạch ngày tiếp theo.",
+    href: "/planning-alerts",
+    action: "Xem Cảnh báo",
   },
 ];
 
 export default function DemoScenarioPage() {
   return (
     <AppShell>
-      <main className="mx-auto max-w-[1500px] p-5">
+      <main className="mx-auto max-w-[1550px] p-5">
         <div className="mb-5">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-            Customer Demo Mode
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
+            Customer Demo • ERP + APS nhẹ + MES nhẹ
           </p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">
             Kịch bản demo khách hàng
           </h1>
-          <p className="mt-1 max-w-4xl text-sm text-slate-500">
-            Trình bày ERP theo một câu chuyện xuyên suốt thay vì mở từng chức năng rời rạc.
-            Dữ liệu vẫn là dữ liệu thật trong hệ thống demo, không tự sửa trạng thái nghiệp vụ.
+          <p className="mt-1 max-w-5xl text-sm leading-6 text-slate-500">
+            Demo theo một câu chuyện xuyên suốt: từ cam kết giao hàng đến Material, Set Ready,
+            Bottleneck, finite-capacity, Dispatch, thực thi xưởng, Quality và phản hồi kế hoạch.
+            Không cần mở chức năng theo kiểu rời rạc.
           </p>
         </div>
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <div className="text-xs font-bold uppercase text-blue-600">Mục tiêu</div>
-            <div className="mt-2 font-bold text-slate-900">
-              Cho khách hiểu flow trong 10–15 phút
-            </div>
-          </div>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <div className="text-xs font-bold uppercase text-emerald-700">Thông điệp</div>
-            <div className="mt-2 font-bold text-slate-900">
-              ERP chủ động phát hiện và điều tiết sản xuất
-            </div>
-          </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <div className="text-xs font-bold uppercase text-amber-700">Chuẩn bị lại</div>
-            <div className="mt-2 font-bold text-slate-900">
-              Dùng Reset dữ liệu trong Cấu hình khi cần
-            </div>
-          </div>
+        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <InfoCard tone="blue" title="Mục tiêu" text="Khách hiểu flow trong 15–20 phút" />
+          <InfoCard tone="emerald" title="Thông điệp" text="ERP ưu tiên tạo bộ cửa hoàn chỉnh, không chỉ chạy đầy máy" />
+          <InfoCard tone="violet" title="Điểm nhấn" text="Material + Set Ready + Bottleneck + finite Capacity" />
+          <InfoCard tone="amber" title="Chuẩn bị lại" text="Reset demo giữ 200 đơn và Master/Config" />
         </div>
 
         <div className="space-y-3">
@@ -124,12 +146,36 @@ export default function DemoScenarioPage() {
             Câu chuyện kết thúc
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            “Hệ thống không chỉ lưu dữ liệu. Từ nhu cầu đơn hàng, ERP tạo LSX, gom kế hoạch
-            theo Lô, kiểm tra WIP/Capacity/Priority, điều độ xuống xưởng, nhận báo cáo thực tế
-            và tự trả lại tiến độ/cảnh báo cho người quản lý.”
+            “Hệ thống không chỉ tạo lệnh và ghi nhận sản lượng. ERP kiểm tra vật tư, biết bộ cửa
+            đang thiếu Cánh/Khung/Phào ở đâu, tìm bottleneck, giới hạn theo Capacity thực tế,
+            điều độ xuống xưởng, kiểm soát Quality và tự đưa dữ liệu thực tế quay lại kế hoạch ngày sau.”
           </p>
         </div>
       </main>
     </AppShell>
+  );
+}
+
+function InfoCard({
+  title,
+  text,
+  tone,
+}: {
+  title: string;
+  text: string;
+  tone: "blue" | "emerald" | "violet" | "amber";
+}) {
+  const cls = {
+    blue: "border-blue-200 bg-blue-50 text-blue-700",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    violet: "border-violet-200 bg-violet-50 text-violet-700",
+    amber: "border-amber-200 bg-amber-50 text-amber-700",
+  }[tone];
+
+  return (
+    <div className={`rounded-xl border p-4 ${cls}`}>
+      <div className="text-xs font-bold uppercase">{title}</div>
+      <div className="mt-2 text-sm font-bold text-slate-900">{text}</div>
+    </div>
   );
 }

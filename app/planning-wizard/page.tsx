@@ -63,6 +63,39 @@ type PlanningAlert = {
   metric: string;
 };
 
+type PlanningKpi = {
+  materialReady: number;
+  materialShortage: number;
+  setReadyQty: number;
+  setGapQty: number;
+  openQuality: number;
+  qualityHold: number;
+  overloadedWorkCenters: number;
+  highLoadWorkCenters: number;
+  recommendationCount: number;
+};
+
+type BottleneckLot = {
+  id: string;
+  lotNo: string;
+  totalQty: number;
+  setReady: number;
+  setGap: number;
+  bottleneckBranch: string;
+};
+
+type SmartRecommendation = {
+  rootId: string;
+  productionNo: string;
+  orderNo: string;
+  lotNo: string;
+  branch: string;
+  woCode: string;
+  recommendedQty: number;
+  score: number;
+  reason: string;
+};
+
 type DispatchOperation = {
   id: string;
   wo_code: string;
@@ -72,6 +105,7 @@ type DispatchOperation = {
 
 type DispatchMetrics = {
   capacity: number;
+  carryOver?: number;
   capacityRemaining: number;
   wipMin: number;
   wipCurrent: number;
@@ -175,8 +209,11 @@ export default function PlanningWizardPage() {
     priority: 100,
   });
 
-  // Step 4
+  // Step 4 - Advanced Planning Intelligence
   const [alerts, setAlerts] = useState<PlanningAlert[]>([]);
+  const [planningKpi, setPlanningKpi] = useState<PlanningKpi | null>(null);
+  const [bottleneckLots, setBottleneckLots] = useState<BottleneckLot[]>([]);
+  const [smartRecommendations, setSmartRecommendations] = useState<SmartRecommendation[]>([]);
 
   // Step 5
   const [dispatchDate, setDispatchDate] = useState(today());
@@ -266,9 +303,9 @@ export default function PlanningWizardPage() {
     "Đơn hàng",
     "Lệnh sản xuất",
     "Lô sản xuất",
-    "Kiểm tra kế hoạch",
+    "Sẵn sàng & Smart Plan",
     "Điều độ sản xuất",
-    "Thực thi xưởng",
+    "Xưởng & Quality",
     "Theo dõi kết quả",
   ];
 
@@ -379,8 +416,20 @@ export default function PlanningWizardPage() {
 
   async function loadAlerts() {
     await run(async () => {
-      const result = await jsonFetch("/api/planning-alerts");
-      setAlerts(result.alerts ?? []);
+      const [alertResult, intelligence] = await Promise.all([
+        jsonFetch("/api/planning-alerts"),
+        jsonFetch("/api/planning/bottleneck"),
+      ]);
+
+      setAlerts(alertResult.alerts ?? []);
+      setPlanningKpi(intelligence.kpi ?? null);
+      setBottleneckLots(
+        [...(intelligence.lots ?? [])]
+          .filter((item: BottleneckLot) => Number(item.setGap || 0) > 0)
+          .sort((a: BottleneckLot, b: BottleneckLot) => b.setGap - a.setGap)
+          .slice(0, 6)
+      );
+      setSmartRecommendations((intelligence.recommendations ?? []).slice(0, 8));
     });
   }
 
@@ -508,7 +557,7 @@ export default function PlanningWizardPage() {
                   Toàn bộ quy trình trong một workspace
                 </h1>
                 <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-                  Không chuyển trang. Mỗi bước thao tác trực tiếp bằng API/logic hiện có của ERP.
+                  Một workspace khép kín: Đơn → LSX → Lô → Material/Set/Bottleneck/Smart Plan → Dispatch → Xưởng → Theo dõi.
                 </p>
               </div>
 
@@ -641,7 +690,14 @@ export default function PlanningWizardPage() {
             )}
 
             {current === 3 && (
-              <StepAlerts alerts={alerts} busy={busy} onRefresh={loadAlerts} />
+              <StepAlerts
+                alerts={alerts}
+                kpi={planningKpi}
+                bottlenecks={bottleneckLots}
+                recommendations={smartRecommendations}
+                busy={busy}
+                onRefresh={loadAlerts}
+              />
             )}
 
             {current === 4 && (
@@ -1088,10 +1144,16 @@ function StepLots({
 
 function StepAlerts({
   alerts,
+  kpi,
+  bottlenecks,
+  recommendations,
   busy,
   onRefresh,
 }: {
   alerts: PlanningAlert[];
+  kpi: PlanningKpi | null;
+  bottlenecks: BottleneckLot[];
+  recommendations: SmartRecommendation[];
   busy: boolean;
   onRefresh: () => void;
 }) {
@@ -1099,8 +1161,8 @@ function StepAlerts({
     <>
       <StepTitle
         no={4}
-        title="Kiểm tra kế hoạch"
-        description="ERP tự phát hiện đơn trễ, WO quá Capacity và Lô mất cân bằng trước khi điều độ."
+        title="Kiểm tra sẵn sàng & tối ưu kế hoạch"
+        description="Trước khi Dispatch, ERP kiểm tra Material Readiness, Set Readiness, Bottleneck, Quality Hold, Capacity Load và Smart Recommendation trong cùng workspace."
         action={
           <button
             type="button"
@@ -1108,36 +1170,116 @@ function StepAlerts({
             onClick={onRefresh}
             className="rounded-md border border-slate-300 px-4 py-2 text-xs font-bold"
           >
-            Tải lại cảnh báo
+            Tính lại kế hoạch
           </button>
         }
       />
 
-      {alerts.length === 0 ? (
-        <EmptyState text="Không có cảnh báo đáng chú ý." />
-      ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {alerts.slice(0, 20).map((alert) => (
-            <div
-              key={alert.id}
-              className={`rounded-xl border p-4 ${
-                alert.level === "CRITICAL"
-                  ? "border-red-200 bg-red-50"
-                  : "border-amber-200 bg-amber-50"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-extrabold uppercase">
-                  {alert.level === "CRITICAL" ? "Cần xử lý" : "Theo dõi"}
-                </span>
-                <strong>{alert.metric}</strong>
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
+        <SummaryBox title="Material Ready" value={kpi?.materialReady ?? 0} />
+        <SummaryBox title="Material Shortage" value={kpi?.materialShortage ?? 0} />
+        <SummaryBox title="Set Ready" value={kpi?.setReadyQty ?? 0} />
+        <SummaryBox title="Set Gap" value={kpi?.setGapQty ?? 0} />
+        <SummaryBox title="Quality Hold" value={kpi?.qualityHold ?? 0} />
+        <SummaryBox title="WO Overload" value={kpi?.overloadedWorkCenters ?? 0} />
+        <SummaryBox title="Smart đề xuất" value={kpi?.recommendationCount ?? 0} />
+      </div>
+
+      <div className="mb-5 grid gap-4 xl:grid-cols-2">
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="font-bold text-slate-900">Bottleneck theo Lô</div>
+          <p className="mt-1 text-xs text-slate-500">
+            Ưu tiên nơi làm tăng số Set Ready, không chỉ nơi còn dư Capacity.
+          </p>
+          <div className="mt-3 space-y-2">
+            {bottlenecks.length === 0 && (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5 text-center text-xs text-slate-400">
+                Chưa phát hiện Lô có Set Gap đáng chú ý.
               </div>
-              <div className="mt-2 font-bold text-slate-900">{alert.title}</div>
-              <div className="mt-1 text-sm text-slate-600">{alert.message}</div>
-            </div>
-          ))}
+            )}
+            {bottlenecks.map((lot) => (
+              <div key={lot.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <strong>{lot.lotNo}</strong>
+                  <span className="rounded-full bg-red-100 px-2 py-1 text-[10px] font-bold text-red-700">
+                    {lot.bottleneckBranch}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-slate-500">
+                  Set Ready {lot.setReady}/{lot.totalQty} • Gap {lot.setGap}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div className="font-bold text-slate-900">Smart Planning đề xuất</div>
+          <p className="mt-1 text-xs text-slate-500">
+            Score dựa trên ngày giao + Priority Lô + Material + Bottleneck + Capacity.
+          </p>
+          <div className="mt-3 space-y-2">
+            {recommendations.length === 0 && (
+              <div className="rounded-lg border border-dashed border-blue-200 bg-white p-5 text-center text-xs text-slate-400">
+                Chưa có đề xuất phù hợp.
+              </div>
+            )}
+            {recommendations.map((item, index) => (
+              <div key={`${item.rootId}-${item.branch}`} className="rounded-lg border border-blue-100 bg-white p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="text-sm">
+                    #{index + 1} {item.productionNo} • {item.woCode}
+                  </strong>
+                  <span className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700">
+                    Score {item.score}
+                  </span>
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {item.orderNo} • {item.branch} • đề xuất {item.recommendedQty} bộ
+                </div>
+                <div className="mt-1 text-[10px] text-slate-400">{item.reason}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-xl border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="font-bold text-slate-900">Planning Exceptions</div>
+          <div className="mt-1 text-xs text-slate-500">
+            Material Shortage / Quality Hold / Set Gap / Overload / Delivery Risk phải được nhìn thấy trước khi Release.
+          </div>
         </div>
-      )}
+
+        {alerts.length === 0 ? (
+          <EmptyState text="Không có cảnh báo đáng chú ý." />
+        ) : (
+          <div className="grid gap-3 p-4 lg:grid-cols-2">
+            {alerts.slice(0, 16).map((alert) => (
+              <div
+                key={alert.id}
+                className={`rounded-xl border p-4 ${
+                  alert.level === "CRITICAL"
+                    ? "border-red-200 bg-red-50"
+                    : alert.level === "WARNING"
+                    ? "border-amber-200 bg-amber-50"
+                    : "border-blue-200 bg-blue-50"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-extrabold uppercase">
+                    {alert.level === "CRITICAL" ? "Cần xử lý" : alert.level === "WARNING" ? "Theo dõi" : "Thông tin"}
+                  </span>
+                  <strong>{alert.metric}</strong>
+                </div>
+                <div className="mt-2 font-bold text-slate-900">{alert.title}</div>
+                <div className="mt-1 text-sm text-slate-600">{alert.message}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </>
   );
 }
@@ -1174,7 +1316,7 @@ function StepDispatch({
       <StepTitle
         no={5}
         title="Điều độ sản xuất"
-        description="Tạo Dispatch Draft theo Eligible + WIP + Capacity + Priority, sau đó Release xuống xưởng."
+        description="Sau Smart Plan, Dispatch thực thi theo Carry Over → Capacity → WIP Buffer → Eligible → Priority, sau đó planner Release xuống xưởng."
       />
 
       <div className="mb-4 grid gap-3 md:grid-cols-[220px_1fr_auto]">
@@ -1205,8 +1347,9 @@ function StepDispatch({
         </button>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <SummaryBox title="Capacity còn lại" value={metrics?.capacityRemaining ?? 0} />
+        <SummaryBox title="Carry Over" value={metrics?.carryOver ?? 0} />
         <SummaryBox title="WIP hiện tại" value={metrics?.wipCurrent ?? 0} />
         <SummaryBox title="WIP Target" value={metrics?.wipTarget ?? 0} />
         <SummaryBox title="Thiếu đến Target" value={metrics?.wipNeedToTarget ?? 0} />
@@ -1317,8 +1460,8 @@ function StepShopFloor({
     <>
       <StepTitle
         no={6}
-        title="Thực thi xưởng"
-        description="Xem Dispatch đã Release và nhập Good / NG trực tiếp, không rời workspace."
+        title="Thực thi xưởng & phản hồi chất lượng"
+        description="Xem Dispatch Released, nhập Good / NG. Remain sẽ Carry Over; các Quality Hold mở sẽ xuất hiện ở bước kiểm tra kế hoạch để chặn đề xuất tiếp theo."
       />
 
       <div className="mb-4 grid gap-3 md:grid-cols-[220px_1fr_auto]">
