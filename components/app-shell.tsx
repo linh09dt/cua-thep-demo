@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import DemoTour from "@/components/demo-tour";
+import { useLanguage } from "@/components/language-provider";
 
 type MenuItem = {
   href: string;
@@ -108,6 +109,7 @@ export default function AppShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const title = currentTitle(pathname);
+  const { language, setLanguage } = useLanguage();
 
   return (
     <div className="erp-app">
@@ -200,6 +202,10 @@ export default function AppShell({
           </div>
 
           <div className="erp-top-actions">
+            <div className="erp-language-switch" aria-label="Language / Ngôn ngữ">
+              <button type="button" onClick={() => setLanguage("vi")} className={language === "vi" ? "is-active" : ""}>VI</button>
+              <button type="button" onClick={() => setLanguage("en")} className={language === "en" ? "is-active" : ""}>EN</button>
+            </div>
             <div className="erp-mobile-title">
               {title}
             </div>
