@@ -3,10 +3,13 @@ import Link from "next/link";
 import {useEffect,useState} from "react";
 const steps=[
 ["Dashboard điều hành","KPI, cảnh báo và nút thắt của nhà máy.","/"],
+["Production Control Tower","Một màn hình điều hành Orders Risk → Material → Bottleneck → Capacity → WIP → Quality → Carry Over.","/control-tower"],
 ["Đơn hàng","Nhu cầu khách hàng, đơn chưa LSX, đang chạy và hoàn thành.","/order-tracking"],
 ["Lệnh & Lô sản xuất","LSX cha/con/WO và cách gom đơn vào lô kế hoạch.","/production-lots"],
 ["Material Readiness","READY / PARTIAL / SHORTAGE / HOLD trước khi lập lịch.","/material-readiness"],
+["Material Requirement","BOM demand → On-hand → Safety stock → Shortage và ảnh hưởng đơn hàng.","/material-requirements"],
 ["Set Readiness","So sánh Cánh - Khung - Phào; Set Ready lấy theo nhánh thấp nhất.","/set-readiness"],
+["Set Matching","Matching theo Order + Model + Size + Color + Opening + Hardware trước điểm hội tụ.","/set-matching"],
 ["Bottleneck","Xác định nhánh/công đoạn đang giữ tốc độ hoàn thành bộ cửa.","/bottleneck"],
 ["Smart Planning","Xếp hạng theo ngày giao, vật tư, bottleneck, capacity và priority.","/smart-planning"],
 ["Schedule & Dispatch","Finite-capacity rồi tạo/release Dispatch xuống xưởng.","/schedule-board"],

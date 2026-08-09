@@ -24,6 +24,7 @@ const menuGroups: MenuGroup[] = [
     theme: "overview",
     items: [
       { href: "/", label: "Dashboard điều hành", short: "DB" },
+      { href: "/control-tower", label: "Trung tâm điều hành", short: "CT" },
       { href: "/planning-wizard", label: "Lập kế hoạch từng bước", short: "WZ" },
       { href: "/planning-alerts", label: "Cảnh báo kế hoạch", short: "CB" },
       { href: "/weekly-plan", label: "Kế hoạch 7 ngày", short: "7D" },
@@ -59,7 +60,9 @@ const menuGroups: MenuGroup[] = [
       { href: "/production-orders", label: "Lệnh sản xuất", short: "LS" },
       { href: "/production-lots", label: "Lô sản xuất", short: "LO" },
       { href: "/material-readiness", label: "Sẵn sàng vật tư", short: "MR" },
+      { href: "/material-requirements", label: "Nhu cầu vật tư", short: "RQ" },
       { href: "/set-readiness", label: "Sẵn sàng đủ bộ", short: "SR" },
+      { href: "/set-matching", label: "Matching đủ bộ", short: "SM" },
       { href: "/bottleneck", label: "Phân tích nút thắt", short: "BN" },
       { href: "/smart-planning", label: "Kế hoạch thông minh", short: "SP" },
       { href: "/schedule-board", label: "Bảng lịch sản xuất", short: "SB" },
