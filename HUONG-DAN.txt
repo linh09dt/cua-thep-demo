@@ -1,11 +1,13 @@
-CẬP NHẬT SONG NGỮ VI / EN
-- Thêm nút VI | EN trên thanh topbar.
-- Áp dụng toàn hệ thống: menu, dashboard, wizard, kế hoạch, lô, LSX, dispatch, báo cáo, quality, cấu hình và các màn hình demo mới.
-- Dịch cả text động render sau khi API tải, placeholder, title, aria-label.
-- Lưu ngôn ngữ đã chọn trong localStorage.
-- Mặc định tiếng Việt.
-- Không thay đổi database, API, logic WO/Dispatch/Capacity/WIP.
+Đã sửa lớp song ngữ toàn cục VI/EN.
 
-Chép đè đúng 4 file/thư mục trong ZIP rồi chạy:
+Chỉ thay:
+components/language-provider.tsx
+
+Bổ sung các cụm còn trộn Việt/Anh trên Dashboard và các text động:
+Planning Alerts, KPI, trạng thái đơn, đơn vị ngày/bộ/đơn, Cánh/Khung/Phào,
+Capacity, Dispatch, Bottleneck, tên công đoạn và các text render sau API.
+
+Không đổi database hoặc logic nghiệp vụ.
+
+Copy đè file rồi chạy:
 npm run build
-npm run dev
