@@ -28,6 +28,10 @@ const menuGroups: MenuGroup[] = [
       { href: "/weekly-plan", label: "Kế hoạch 7 ngày", short: "7D" },
       { href: "/management-kpi", label: "KPI quản lý", short: "KP" },
       { href: "/what-if-planning", label: "What-if Planning", short: "WI" },
+      { href: "/action-center", label: "Việc cần xử lý", short: "AC" },
+      { href: "/delivery-risk", label: "Rủi ro giao hàng", short: "DR" },
+      { href: "/daily-meeting", label: "Họp sản xuất đầu ca", short: "MT" },
+      { href: "/scenario-compare", label: "So sánh phương án", short: "SC" },
     ],
   },
   {
@@ -68,6 +72,8 @@ const menuGroups: MenuGroup[] = [
       { href: "/shop-floor", label: "Màn hình xưởng", short: "SX" },
       { href: "/quality", label: "Chất lượng / Hold", short: "QC" },
       { href: "/production-report", label: "Báo cáo sản xuất", short: "BC" },
+      { href: "/shipping-readiness", label: "Sẵn sàng giao hàng", short: "SH" },
+      { href: "/cost-loss", label: "Tổn thất sản xuất", short: "CL" },
     ],
   },
   {

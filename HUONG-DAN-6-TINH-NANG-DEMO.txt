@@ -1,0 +1,11 @@
+6 PHẦN ĐÃ THÊM
+1 Delivery Risk: /delivery-risk
+2 Action Center: /action-center
+3 Shipping Readiness: /shipping-readiness
+4 Daily Production Meeting: /daily-meeting
+5 Cost/Loss: /cost-loss
+6 Scenario Compare: /scenario-compare
+
+Dùng API đọc chung /api/executive-demo. Không migration DB mới. Không đổi logic Dispatch/Report/LSX hiện tại. Các chỉ số Scenario Compare và Cost/Loss là mô phỏng/ước tính demo, được ghi rõ trên UI.
+
+Chạy: npm run build
