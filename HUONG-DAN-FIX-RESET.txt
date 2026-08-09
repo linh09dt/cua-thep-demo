@@ -1,0 +1,80 @@
+FIX RESET DỮ LIỆU DEMO
+
+NGUYÊN NHÂN ĐÃ XÁC ĐỊNH:
+- RPC reset_demo_keep_200_orders() chạy thành công trong SQL Editor.
+- API đang nuốt lỗi Supabase vì PostgrestError không phải instanceof Error.
+- Có thể PostgREST schema cache chưa reload sau khi tạo RPC.
+
+CHỈ 2 FILE THAY ĐỔI:
+1. app/api/configuration/reset/route.ts
+2. supabase/migrations/202608080016_fix_reset_rpc_postgrest.sql
+
+=================================================
+BƯỚC 1 - SUPABASE
+=================================================
+
+Mở:
+supabase/migrations/202608080016_fix_reset_rpc_postgrest.sql
+
+Supabase Dashboard
+-> SQL Editor
+-> New query
+-> Copy toàn bộ
+-> Run
+
+Kết quả cuối phải có:
+
+function_name:
+reset_demo_keep_200_orders
+
+schema_name:
+public
+
+service_role_can_execute:
+true
+
+=================================================
+BƯỚC 2 - COPY API
+=================================================
+
+Copy đè:
+app/api/configuration/reset/route.ts
+
+=================================================
+BƯỚC 3 - BUILD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm run build
+
+=================================================
+BƯỚC 4 - TEST LOCAL
+=================================================
+
+npm run dev
+
+Mở:
+/configuration
+-> Reset dữ liệu
+-> nhập RESET
+-> bấm RESET DỮ LIỆU DEMO
+
+Nếu còn lỗi, UI/API giờ sẽ trả đúng:
+- message
+- details
+- hint
+- code
+
+thay vì chỉ:
+"Không thể reset dữ liệu demo."
+
+=================================================
+GIT
+=================================================
+
+git add app/api/configuration/reset/route.ts supabase/migrations/202608080016_fix_reset_rpc_postgrest.sql
+
+git commit -m "Fix reset RPC for web"
+
+git push

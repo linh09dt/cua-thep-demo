@@ -1,101 +1,109 @@
-ĐỔI LOGIC LÔ SẢN XUẤT SAU LSX
+CẬP NHẬT 5 TAB THEO KIẾN TRÚC 6 PHASE
 
-FLOW MỚI:
+Baseline:
+cua-thep-demo(20260809-022919).zip
 
-Đơn hàng
--> Tạo LSX
--> Lập Lô sản xuất
--> Release Lô
--> Dispatch
-
-=================================================
-THAY ĐỔI CHÍNH
-=================================================
-
-1. Tạo LSX:
-- KHÔNG còn yêu cầu đơn phải thuộc Lô RELEASED.
-- Có thể tạo LSX trực tiếp từ Đơn hàng.
-
-2. Lô sản xuất:
-- KHÔNG còn chọn Đơn hàng.
-- Chỉ chọn LSX Cha đã được tạo.
-- Một LSX Cha chỉ được thuộc một Lô tại một thời điểm.
-
-3. Lô vẫn theo dõi:
-- Tổng SL
-- Cánh Ready
-- Khung Ready
-- Phào Ready
-- Đủ Bộ Ready
-
-Đủ Bộ Ready từng LSX:
-MIN(Cánh Ready, Khung Ready, Phào Ready)
-
-4. Dispatch:
-Không thay đổi.
-Vẫn:
-Eligible + WIP + Capacity + Priority.
+CHỈ 5 FILE THAY ĐỔI:
+- app/erp-logic/page.tsx
+- app/demo-scenario/page.tsx
+- app/planning-wizard/page.tsx
+- app/planning-alerts/page.tsx
+- app/weekly-plan/page.tsx
 
 =================================================
-MIGRATION
+1. LOGIC VẬN HÀNH ERP
 =================================================
 
-BẮT BUỘC chạy:
+Cập nhật đầy đủ 19 bước:
+Order -> LSX -> Lot -> Material -> Routing/WO -> Capacity/WIP -> Priority
+-> Set Readiness -> Bottleneck -> Smart Plan -> Schedule Board
+-> Auto Dispatch -> Release -> Shop Floor -> Carry Over -> Đủ Bộ
+-> Quality/Hold -> WO chung -> Dashboard/Re-plan.
 
-supabase/migrations/202608080015_lot_after_lsx.sql
-
-Migration:
-- thêm production_order_id vào production_lot_items
-- liên kết trực tiếp tới LSX Cha
-- backfill Lô cũ nếu đã có LSX
-- unique 1 LSX Cha / 1 Lô
-
-=================================================
-TEST
-=================================================
-
-1. /orders
-Có 200 đơn.
-
-2. /production-orders
-Chọn đơn bất kỳ.
-Tạo LSX ngay, KHÔNG cần Lô.
-
-3. /production-lots
-LSX vừa tạo phải xuất hiện ở:
-"LSX chưa vào lô"
-
-4. Chọn nhiều LSX.
-Tạo Lô.
-
-5. Release Lô.
-
-6. Kiểm tra:
-Lô hiển thị LSX + Đơn hàng + Ready Cánh/Khung/Phào/Đủ Bộ.
+Cập nhật Dispatch logic mới:
+- Carry Over chiếm Capacity trước.
+- WO đầu Cánh/Khung/Phào chạy theo Capacity còn lại.
+- WO sau chừa WIP Buffer thiếu đến Target.
+- WIP Max là cảnh báo, Capacity là giới hạn cứng.
 
 =================================================
-FILE THAY ĐỔI
+2. KỊCH BẢN DEMO
 =================================================
 
-app/api/production-orders/route.ts
-app/production-orders/page.tsx
-app/api/production-lots/route.ts
-app/production-lots/page.tsx
-app/erp-logic/page.tsx
-supabase/migrations/202608080015_lot_after_lsx.sql
+Nâng từ 7 lên 12 điểm trình bày:
+Dashboard -> LSX -> Lot -> Material -> Set/Bottleneck -> Smart Plan
+-> Schedule Board -> Dispatch -> Shop Floor -> Quality -> Tracking
+-> Closed-loop Planning.
 
 =================================================
-CMD
+3. LẬP KẾ HOẠCH TỪNG BƯỚC
 =================================================
+
+Vẫn giữ 1 workspace, không chuyển trang trong flow thao tác.
+Bước 4 được nâng thành Planning Intelligence:
+- Material Ready / Shortage
+- Set Ready / Set Gap
+- Quality Hold
+- WO Overload
+- Bottleneck theo Lô
+- Smart Recommendation / Score
+- Planning Exception
+
+Bước Dispatch hiển thị thêm Carry Over.
+
+=================================================
+4. CẢNH BÁO KẾ HOẠCH
+=================================================
+
+Phân loại cảnh báo:
+- Delivery
+- Material
+- Set / Bottleneck
+- Capacity
+- Quality
+
+Có filter và KPI theo từng nhóm.
+
+=================================================
+5. KẾ HOẠCH 7 NGÀY
+=================================================
+
+Nâng thành finite-capacity quick view:
+- Tổng Planned
+- Tổng Capacity
+- Load trung bình
+- WO-Day tải cao
+- WO-Day Overload
+- Nhận diện nhánh Cánh / Khung / Phào / Đủ Bộ
+- Link sang Schedule Board
+
+Ngưỡng hiển thị:
+0%: chưa có kế hoạch
+< 90%: còn dư năng lực
+90-100%: tải cao
+> 100%: Overload cần reschedule
+
+=================================================
+SUPABASE
+=================================================
+
+Không có migration mới.
+Không cần supabase db push cho patch này.
+
+=================================================
+KIỂM TRA
+=================================================
+
+5 file TSX đã qua TypeScript transpile syntax check: OK.
+Không chạy được npm install/full build trong môi trường đóng gói vì registry nội bộ trả 404 package zod-validation-error.
+
+Chạy trên máy:
 
 cd /d D:\Projects\cua-thep-demo
-
 npm run build
 
 Nếu build OK:
 
-git add app/api/production-orders/route.ts app/production-orders/page.tsx app/api/production-lots/route.ts app/production-lots/page.tsx app/erp-logic/page.tsx supabase/migrations/202608080015_lot_after_lsx.sql
-
-git commit -m "Move production lot planning after LSX"
-
+git add app/erp-logic/page.tsx app/demo-scenario/page.tsx app/planning-wizard/page.tsx app/planning-alerts/page.tsx app/weekly-plan/page.tsx
+git commit -m "Update planning guidance tabs for six phase architecture"
 git push

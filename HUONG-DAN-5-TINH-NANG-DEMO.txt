@@ -1,0 +1,8 @@
+5 PHẦN ĐÃ THÊM
+1 Demo Mode: nút ▶ DEMO, guided tour 12 bước.
+2 KPI quản lý: /management-kpi.
+3 Dashboard Drill-down: Advanced KPI click sang màn hình nghiệp vụ.
+4 Traceability: /traceability + /api/traceability.
+5 What-if Planning: /what-if-planning; chỉ simulation, không ghi DB/Release.
+Không có migration mới.
+Chạy: npm run build

@@ -338,14 +338,14 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
-            <MiniKpi title="Material Ready" value={data.advancedKpi.materialReady} tone="green" />
-            <MiniKpi title="Material Shortage" value={data.advancedKpi.materialShortage} tone="red" />
-            <MiniKpi title="Set Ready" value={data.advancedKpi.setReadyQty} tone="green" />
-            <MiniKpi title="Set Gap" value={data.advancedKpi.setGapQty} tone="amber" />
-            <MiniKpi title="Quality Open" value={data.advancedKpi.openQuality} tone="amber" />
-            <MiniKpi title="Quality Hold" value={data.advancedKpi.qualityHold} tone="red" />
-            <MiniKpi title="WO Overload" value={data.advancedKpi.overloadedWorkCenters} tone="red" />
-            <MiniKpi title="Smart Recs" value={data.advancedKpi.recommendationCount} tone="blue" />
+            <Link href="/material-readiness"><MiniKpi title="Material Ready" value={data.advancedKpi.materialReady} tone="green" /></Link>
+            <Link href="/material-readiness"><MiniKpi title="Material Shortage" value={data.advancedKpi.materialShortage} tone="red" /></Link>
+            <Link href="/set-readiness"><MiniKpi title="Set Ready" value={data.advancedKpi.setReadyQty} tone="green" /></Link>
+            <Link href="/bottleneck"><MiniKpi title="Set Gap" value={data.advancedKpi.setGapQty} tone="amber" /></Link>
+            <Link href="/quality"><MiniKpi title="Quality Open" value={data.advancedKpi.openQuality} tone="amber" /></Link>
+            <Link href="/quality"><MiniKpi title="Quality Hold" value={data.advancedKpi.qualityHold} tone="red" /></Link>
+            <Link href="/schedule-board"><MiniKpi title="WO Overload" value={data.advancedKpi.overloadedWorkCenters} tone="red" /></Link>
+            <Link href="/smart-planning"><MiniKpi title="Smart Recs" value={data.advancedKpi.recommendationCount} tone="blue" /></Link>
           </div>
 
           {data.topBottlenecks.length > 0 && (

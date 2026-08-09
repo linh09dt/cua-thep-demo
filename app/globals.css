@@ -772,3 +772,6 @@ textarea {
     bottom: 0;
   }
 }
+
+.demo-tour-launch{position:fixed;right:18px;bottom:18px;z-index:70;border:1px solid #93c5fd;border-radius:999px;background:#0f5fb7;color:white;padding:10px 15px;font-size:11px;font-weight:900;box-shadow:0 8px 24px rgba(15,95,183,.28)}
+.demo-tour-launch:hover{background:#0b4f99}.demo-tour-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.58);padding:18px}.demo-tour-card{width:min(620px,100%);border-radius:18px;background:white;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.28)}

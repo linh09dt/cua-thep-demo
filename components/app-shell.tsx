@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import DemoTour from "@/components/demo-tour";
 
 type MenuItem = {
   href: string;
@@ -25,6 +26,8 @@ const menuGroups: MenuGroup[] = [
       { href: "/planning-wizard", label: "Lập kế hoạch từng bước", short: "WZ" },
       { href: "/planning-alerts", label: "Cảnh báo kế hoạch", short: "CB" },
       { href: "/weekly-plan", label: "Kế hoạch 7 ngày", short: "7D" },
+      { href: "/management-kpi", label: "KPI quản lý", short: "KP" },
+      { href: "/what-if-planning", label: "What-if Planning", short: "WI" },
     ],
   },
   {
@@ -33,6 +36,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { href: "/erp-logic", label: "Logic vận hành ERP", short: "LG" },
       { href: "/demo-scenario", label: "Kịch bản demo", short: "DM" },
+      { href: "/traceability", label: "Truy xuất sản xuất", short: "TR" },
     ],
   },
   {
@@ -211,6 +215,7 @@ export default function AppShell({
         </header>
 
         <div className="erp-content">{children}</div>
+        <DemoTour />
 
         <footer className="erp-footer">
           <span>STEEL ERP • Production Planning & Manufacturing</span>

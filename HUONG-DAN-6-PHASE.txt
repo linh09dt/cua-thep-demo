@@ -1,0 +1,216 @@
+ERP CỬA THÉP - NÂNG CẤP 6 PHASE
+Baseline: cua-thep-demo(10).zip
+
+=================================================
+PHASE 1 - MATERIAL READINESS + SET READINESS
+=================================================
+
+Menu mới:
+- Sẵn sàng vật tư: /material-readiness
+- Sẵn sàng đủ bộ: /set-readiness
+
+Material Readiness tại LSX Cha:
+READY / PARTIAL / SHORTAGE / HOLD
+
+Smart Planning sẽ loại các LSX:
+- SHORTAGE
+- HOLD
+- Quality Hold
+
+Nếu LSX chưa cấu hình Material:
+- demo mặc định READY để không phá flow cũ.
+
+Set Readiness:
+- Cánh Ready = Good tại WO05
+- Khung Ready = Good tại WO10
+- Phào Ready = Good tại WO13
+- Nếu WO terminal COMPLETED nhưng chưa có report chi tiết, dùng SL LSX.
+
+SET READY theo từng LSX:
+MIN(Cánh Ready, Khung Ready, Phào Ready)
+
+Không cộng chéo Cánh của đơn này với Khung của đơn khác.
+
+=================================================
+PHASE 2 - BOTTLENECK ENGINE
+=================================================
+
+Menu:
+/ bottleneck -> thực tế route: /bottleneck
+
+Tính theo Lô:
+- Cánh Gap
+- Khung Gap
+- Phào Gap
+- Set Gap
+- Bottleneck Branch
+
+Đồng thời tính Capacity Load từng WO:
+Planned / Capacity / Load % / Remaining
+
+=================================================
+PHASE 3 - SMART AUTO PLANNING
+=================================================
+
+Menu:
+/smart-planning
+
+Planning Score dùng:
+- Ngày giao
+- Priority Lô
+- Material Status
+- Bottleneck Branch
+- Branch Gap
+- Capacity còn lại của WO hiện tại
+
+Chỉ lấy Lô:
+RELEASED / RUNNING
+
+Kết quả:
+- LSX nào nên ưu tiên
+- Nhánh nào
+- WO nào
+- SL đề xuất
+- Score
+- Lý do
+
+Nút "Tạo & lưu Smart Plan":
+- lưu production_planning_runs
+- lưu production_planning_recommendations
+- KHÔNG tự Release Dispatch
+- planner vẫn kiểm soát Dispatch hiện tại
+
+=================================================
+PHASE 4 - SCHEDULE BOARD
+=================================================
+
+Menu:
+/schedule-board
+
+Ma trận:
+WO x 7 ngày
+
+Hiển thị:
+Planned / Capacity
+Load %
+Overload
+Remaining
+
+Màu:
+- xanh: bình thường
+- vàng: >=90%
+- đỏ: >100%
+
+=================================================
+PHASE 5 - QUALITY / HOLD / TRACEABILITY
+=================================================
+
+Menu:
+/quality
+
+Event:
+QC / HOLD / REWORK / DEFECT / RELEASE
+
+HOLD:
+- tạo trace event
+- block toàn bộ production_orders có cùng root_id
+- blocked_reason = lý do Quality Hold
+
+Release Hold:
+- đóng các HOLD đang OPEN
+- bỏ block LSX/WO
+- tạo RELEASE event
+
+=================================================
+PHASE 6 - DASHBOARD KPI
+=================================================
+
+Dashboard bổ sung:
+- Material Ready
+- Material Shortage
+- Set Ready Qty
+- Set Gap Qty
+- Quality Open
+- Quality Hold
+- WO Overload
+- Smart Recommendation count
+- Top Bottleneck Lots
+
+Cảnh báo kế hoạch bổ sung:
+- Material Shortage / Hold
+- Quality Hold
+- Set Gap / Bottleneck
+
+=================================================
+DATABASE / MIGRATION
+=================================================
+
+BẮT BUỘC chạy theo thứ tự:
+
+1.
+supabase/migrations/202608090017_advanced_planning_mes.sql
+
+Tạo:
+- production_material_readiness
+- production_planning_runs
+- production_planning_recommendations
+- production_quality_events
+
+2.
+supabase/migrations/202608090018_reset_advanced_planning.sql
+
+Cập nhật Reset:
+- giữ 200 đơn
+- xóa thêm Material/Planning/Quality phát sinh
+- dùng DELETE ... WHERE true để không gặp lỗi 21000
+
+Cách 1 - Supabase SQL Editor:
+Copy migration 017 -> Run
+Copy migration 018 -> Run
+
+Cách 2 - Supabase CLI:
+npx supabase link --project-ref welbaxamhikjdmocevlb
+npx supabase db push
+
+=================================================
+CMD / BUILD
+=================================================
+
+cd /d D:\Projects\cua-thep-demo
+
+npm install
+npm run build
+
+Nếu build OK:
+
+git add app components lib supabase/migrations/202608090017_advanced_planning_mes.sql supabase/migrations/202608090018_reset_advanced_planning.sql
+
+git commit -m "Add advanced planning and MES six phases"
+
+git push
+
+=================================================
+TEST THEO THỨ TỰ
+=================================================
+
+1. Chạy migration 017 + 018
+2. npm run build
+3. /material-readiness
+4. /set-readiness
+5. /bottleneck
+6. /smart-planning
+7. /schedule-board
+8. /quality
+9. /
+10. /planning-alerts
+11. /configuration -> Reset dữ liệu -> kiểm tra vẫn giữ 200 đơn
+
+=================================================
+KIỂM TRA TRONG MÔI TRƯỜNG ĐÓNG GÓI
+=================================================
+
+Đã chạy TypeScript transpile syntax check cho toàn bộ file thay đổi:
+CHANGED_FILES_SYNTAX_OK
+
+Không chạy được npm ci/full Next build trong môi trường đóng gói vì registry nội bộ trả 404 cho package zod-validation-error.
+Vì vậy bắt buộc chạy npm run build trên máy của bạn sau khi copy patch.

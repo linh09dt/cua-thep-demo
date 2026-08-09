@@ -1,0 +1,37 @@
+DEMO ERP CỬA THÉP THÁNG 08/2026
+Mốc ngày hiện tại: 09/08/2026.
+
+Bộ dữ liệu cố ý có cả tình huống tốt và tình huống lỗi/cảnh báo để demo:
+- 200 đơn hàng: Mới / Đã lên kế hoạch / Đang sản xuất / Hoàn thành.
+- 12 Lô: Completed / Running / Released / Draft.
+- 160 LSX đã tạo; 40 đơn chưa tạo LSX.
+- Material: READY / PARTIAL / SHORTAGE / HOLD.
+- Cánh / Khung / Phào chạy lệch nhau để tạo Set Gap và Bottleneck.
+- 01-08/08: Dispatch Released + Good/NG + Remain.
+- 08/08 có Remain để 09/08 thấy Carry Over.
+- 09/08: vừa Released vừa Draft; báo cáo mới hoàn thành một phần.
+- 10-31/08: kế hoạch tương lai; 12/08 và 18/08 có WO cố ý Overload.
+- Quality: QC / HOLD / DEFECT / REWORK; có WO bị block.
+- Smart Planning: lịch sử / hôm nay / tương lai / overload.
+
+KỊCH BẢN TRÌNH DIỄN:
+1. Dashboard: tổng quan tình trạng tháng.
+2. Theo dõi đơn hàng: mở đơn quá khứ, hôm nay, tương lai.
+3. Lô sản xuất: LOT-AUG-01 -> LOT-AUG-12.
+4. Material Readiness: chỉ READY/PARTIAL/SHORTAGE/HOLD.
+5. Set Readiness: chỉ ra nhánh Cánh/Khung/Phào lệch nhau.
+6. Bottleneck: LOT-AUG-03 Khung, LOT-AUG-04 Cánh, LOT-AUG-05 Phào.
+7. Kế hoạch 7 ngày / Schedule Board: xem Capacity Load.
+8. Cảnh báo: xem ngày giao, vật tư, Set Gap, Overload, Quality.
+9. Smart Planning: xem Score + Reason.
+10. Dispatch: lịch sử Released -> hôm nay -> tương lai Draft.
+11. Báo cáo: Good/NG/Remain và Carry Over.
+12. Quality: HOLD làm block WO; REWORK/DEFECT/QC.
+
+CÀI:
+cd /d D:\Projects\cua-thep-demo
+npx supabase db push
+npm run build
+npm run dev
+
+LƯU Ý: migration gọi reset_demo_keep_200_orders() trước khi dựng lại kịch bản.
